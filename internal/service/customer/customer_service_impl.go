@@ -25,7 +25,7 @@ func (customerService *CustomerServiceImpl) Register(req webcustomer.CustomerCre
 		Name:    req.Name,
 		NoHp:    req.NoHp,
 		Address: req.Address,
-		Photo:   req.Photo,
+		Photo:   req.Photo.Filename,
 		Balance: req.Balance,
 	}
 

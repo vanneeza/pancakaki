@@ -1,7 +1,9 @@
 package customercontroller
 
 import (
+	"fmt"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"pancakaki/internal/domain/web"
 	webcustomer "pancakaki/internal/domain/web/customer"
@@ -26,39 +28,42 @@ func NewCustomerController(customerService customerservice.CustomerService) Cust
 func (customerController *CustomerControllerImpl) Register(context *gin.Context) {
 
 	var customer webcustomer.CustomerCreateRequest
+	var file *multipart.FileHeader
 
-	err := context.ShouldBindJSON(&customer)
+	err := context.ShouldBind(&customer)
 	helper.InternalServerError(err, context)
 
-	file, err := context.FormFile("photo")
+	file, err = context.FormFile("photo")
 	helper.InternalServerError(err, context)
 
-	log.Println(customer, "Dicustomer Controller Customer ")
-	log.Println(file, "Controller Customer FIle")
+	log.Println(customer, "ini data customer")
+	log.Println(file, "ini data file")
+	fmt.Scanln()
 
-	// Menentukan lokasi penyimpanan file
 	uploadDir := "document/uploads/customer_profile/"
-	log.Println(uploadDir, "Controller Customer UploadDIr")
-	uploadPath := filepath.Join(uploadDir, file.Filename)
+	if file != nil {
+		uploadPath := filepath.Join(uploadDir, file.Filename)
+		err = context.SaveUploadedFile(file, uploadPath)
+		helper.InternalServerError(err, context)
 
-	// Menyalin file yang diunggah ke lokasi penyimpanan
-	err = context.SaveUploadedFile(file, uploadPath)
-	helper.InternalServerError(err, context)
+		customer.Photo = file
+	}
 
-	customer.Photo = file.Filename
-
-	log.Println(customer.Photo, "Dicustomer Controller Customer Poto")
+	log.Println(customer, "ini data customer sebelum masuk register")
+	log.Println(customer.Address, "address kemana")
 
 	customerResponse, err := customerController.customerService.Register(customer)
 	helper.InternalServerError(err, context)
 
-	web_response := web.WebResponse{
+	webResponse := web.WebResponse{
 		Code:    http.StatusCreated,
 		Status:  "CREATED",
-		Message: "the data has been successfully Add",
+		Message: "The data has been successfully added",
 		Data:    customerResponse,
 	}
-	context.JSON(http.StatusCreated, gin.H{"customer": web_response})
+
+	context.JSON(http.StatusCreated, gin.H{"customer": webResponse})
+
 }
 
 func (customerController *CustomerControllerImpl) ViewAll(context *gin.Context) {
