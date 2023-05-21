@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import "pancakaki/utils/server"
 
 func main() {
-	fmt.Println("jalankah")
+	if err := server.Run(); err != nil {
+		panic(err)
+		// log.Println("Inikah")
+
+	}
 }
