@@ -4,8 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 	admincontroller "pancakaki/api/controller/admin"
+	customercontroller "pancakaki/api/controller/customer"
 	adminrepository "pancakaki/internal/repository/admin"
+	customerrepository "pancakaki/internal/repository/customer"
 	adminservice "pancakaki/internal/service/admin"
+	customerservice "pancakaki/internal/service/customer"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,6 +20,10 @@ func Run(db *sql.DB) *gin.Engine {
 	adminService := adminservice.NewAdminService(adminRepository)
 	adminController := admincontroller.NewAdminController(adminService)
 
+	customerRepository := customerrepository.NewCustomerRepository(db)
+	customerService := customerservice.NewCustomerService(customerRepository)
+	customerController := customercontroller.NewCustomerController(customerService)
+
 	pancakaki := r.Group("pancakaki/v1/")
 
 	admin := pancakaki.Group("/admins")
@@ -26,6 +33,15 @@ func Run(db *sql.DB) *gin.Engine {
 		admin.GET("/:id", adminController.ViewOne)
 		admin.PUT("/:id", adminController.Edit)
 		admin.DELETE("/:id", adminController.Unreg)
+	}
+
+	customer := pancakaki.Group("/customers")
+	{
+		customer.POST("/", customerController.Register)
+		customer.GET("/", customerController.ViewAll)
+		customer.GET("/:id", customerController.ViewOne)
+		customer.PUT("/:id", customerController.Edit)
+		customer.DELETE("/:id", customerController.Unreg)
 	}
 
 	r.GET("/hello", func(c *gin.Context) {
