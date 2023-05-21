@@ -3,12 +3,30 @@ package api
 import (
 	"database/sql"
 	"fmt"
+	admincontroller "pancakaki/api/controller/admin"
+	adminrepository "pancakaki/internal/repository/admin"
+	adminservice "pancakaki/internal/service/admin"
 
 	"github.com/gin-gonic/gin"
 )
 
 func Run(db *sql.DB) *gin.Engine {
 	r := gin.Default()
+
+	adminRepository := adminrepository.NewAdminRepository(db)
+	adminService := adminservice.NewAdminService(adminRepository)
+	adminController := admincontroller.NewAdminController(adminService)
+
+	pancakaki := r.Group("pancakaki/v1/")
+
+	admin := pancakaki.Group("/admins")
+	{
+		admin.POST("/", adminController.Register)
+		admin.GET("/", adminController.ViewAll)
+		admin.GET("/:id", adminController.ViewOne)
+		admin.PUT("/:id", adminController.Edit)
+		admin.DELETE("/:id", adminController.Unreg)
+	}
 
 	r.GET("/hello", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Hello, World!"})
