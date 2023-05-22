@@ -181,6 +181,7 @@ func (h *productImageHandler) InsertProductImage(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, result)
 		return
 	}
+	log.Println(file.Filename)
 	extension := filepath.Ext(file.Filename)
 	newFileName := uuid.New().String() + extension
 

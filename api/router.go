@@ -5,12 +5,15 @@ import (
 	"fmt"
 	merkcontroller "pancakaki/api/controller/merk"
 	packetcontroller "pancakaki/api/controller/packet"
+	productcontroller "pancakaki/api/controller/product"
 	productimagecontroller "pancakaki/api/controller/product_image"
 	merkrepository "pancakaki/internal/repository/merk"
 	packetrepository "pancakaki/internal/repository/packet"
+	productrepository "pancakaki/internal/repository/product"
 	productimagerepository "pancakaki/internal/repository/product_image"
 	merkservice "pancakaki/internal/service/merk"
 	packetservice "pancakaki/internal/service/packet"
+	productservice "pancakaki/internal/service/product"
 	productimageservice "pancakaki/internal/service/product_image"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +29,10 @@ func Run(db *sql.DB) *gin.Engine {
 	packetRepository := packetrepository.NewPacketRepository(db)
 	packetService := packetservice.NewPacketService(packetRepository)
 	packetController := packetcontroller.NewPacketHandler(packetService)
+
+	productRepository := productrepository.NewProductRepository(db)
+	productService := productservice.NewProductService(productRepository)
+	productController := productcontroller.NewProductHandler(productService)
 
 	productImageRepository := productimagerepository.NewProductImageRepository(db)
 	productImageService := productimageservice.NewProductImageService(productImageRepository)
@@ -52,15 +59,15 @@ func Run(db *sql.DB) *gin.Engine {
 		packet.PUT("/:id", packetController.DeletePacket)
 	}
 
-	// product := pancakaki.Group("/products")
-	// {
-	// 	product.POST("/", merkController.InsertMerk)
-	// 	product.GET("/", merkController.FindAllMerk)
-	// 	product.GET("/:id", merkController.FindMerkById)
-	// 	product.GET("/name/:name", merkController.FindMerkByName)
-	// 	product.PUT("/", merkController.UpdateMerk)
-	// 	product.PUT("/:id", merkController.DeleteMerk)
-	// }
+	product := pancakaki.Group("/products")
+	{
+		product.POST("/", productController.InsertProduct)
+		product.GET("/", productController.FindAllProduct)
+		product.GET("/:id", productController.FindProductById)
+		product.GET("/name/:name", productController.FindProductByName)
+		product.PUT("/", productController.UpdateProduct)
+		product.PUT("/:id", productController.DeleteProduct)
+	}
 
 	productImage := pancakaki.Group("/product-image")
 	{

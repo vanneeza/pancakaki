@@ -18,6 +18,7 @@ type ProductRepository interface {
 
 type productRepository struct {
 	db *sql.DB
+	// storeRepo
 }
 
 // DeleteProduct implements ProductRepository
@@ -97,6 +98,7 @@ func (repo *productRepository) FindProductByName(name string) (*entity.Product, 
 
 // InsertProduct implements ProductRepository
 func (repo *productRepository) InsertProduct(newProduct *entity.Product) (*entity.Product, error) {
+
 	stmt, err := repo.db.Prepare("INSERT INTO tbl_product (name,price,stock,description,created_at,update_at,discout_id,merk_id) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id")
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert product : %w", err)
