@@ -1,27 +1,17 @@
 CREATE TABLE tbl_admin(
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(50),
-	password VARCHAR(100)
+	password VARCHAR(100),
+	is_delete bool default false
 	);
-	
-CREATE TABLE tbl_merk(
-	id SERIAL PRIMARY KEY,
-	name VARCHAR(50));
 
-CREATE TABLE tbl_packet(
+CREATE TABLE tbl_store(
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(50),
-	interval smallint);
-	
-CREATE TABLE tbl_role(
-	id SERIAL PRIMARY KEY,
-	name VARCHAR(50));
-	
-CREATE TABLE tbl_discount(
-	id SERIAL PRIMARY KEY,
-	name VARCHAR(50),
-	discount SMALLINT);
-	
+	password VARCHAR(100),
+	is_delete bool default false
+	);
+
 CREATE TABLE tbl_customer(
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(50),
@@ -29,13 +19,49 @@ CREATE TABLE tbl_customer(
 	address TEXT,
 	photo VARCHAR(200),
 	bank_id INT,
-	account_number BIGINT
-	)
+	account_number BIGINT,
+	is_delete bool default false,
+	FOREIGN KEY (bank_id) REFERENCES tbl_bank(id)
+	);
+
+CREATE TABLE tbl_role(
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(50),
+	is_delete bool default false
+	);
 
 CREATE TABLE tbl_bank(
-id SERIAL PRIMARY KEY,
-name VARCHAR(50))
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(50),
+	is_delete bool default false
+);
 
+CREATE TABLE tbl_merk(
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(50),
+	store_id INT,
+	is_delete bool default false,
+	FOREIGN KEY (store_id) REFERENCES tbl_store(id)
+	);
+
+CREATE TABLE tbl_packet(
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(50),
+	interval smallint,
+	store_id INT,
+	is_delete bool default false,
+	FOREIGN KEY (store_id) REFERENCES tbl_store(id)
+	);
+	
+CREATE TABLE tbl_discount(
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(50),
+	discount SMALLINT,
+	store_id INT,
+	is_delete bool default false,
+	FOREIGN KEY (store_id) REFERENCES tbl_store(id)
+	);
+	
 CREATE TABLE tbl_product(
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(50),
@@ -44,20 +70,32 @@ CREATE TABLE tbl_product(
 	description TEXT,
 	created_at date,
 	update_at date,
-	is_delete bool,
 	discount_id int,
-	merk_id int);
+	merk_id int,
+	store_id INT,
+	is_delete bool default false,
+	FOREIGN KEY (discount_id) REFERENCES tbl_discount(id),
+	FOREIGN KEY (merk_id) REFERENCES tbl_merk(id),
+	FOREIGN KEY (store_id) REFERENCES tbl_store(id)
+	);
 	
 CREATE TABLE tbl_product_image(
 id SERIAL PRIMARY KEY,
 image_url VARCHAR(200),
-product_id int);
+product_id int,
+is_delete bool default false,
+FOREIGN KEY (product_id) REFERENCES tbl_product(id)
+);
 
 CREATE TABLE review(
 id SERIAL PRIMARY KEY,
 review TEXT,
 product_id INT,
-customer_id INT);
+customer_id INT,
+is_delete bool default false,
+FOREIGN KEY (product_id) REFERENCES tbl_product(id),
+FOREIGN KEY (customer_id) REFERENCES tbl_customer(id)
+);
 
 
 CREATE TABLE tbl_transaction_order(
@@ -67,7 +105,10 @@ buy_date date,
 status VARCHAR(100),
 total int,
 customer_id int,
-product_id int);
+product_id int,
+FOREIGN KEY (customer_id) REFERENCES tbl_customer(id),
+FOREIGN KEY (product_id) REFERENCES tbl_product(id)
+);
 
 ALTER TABLE tbl_admin
 ADD COLUMN role_id INT;

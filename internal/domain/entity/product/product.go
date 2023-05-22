@@ -1,4 +1,4 @@
-package product
+package entity
 
 import "time"
 
@@ -10,7 +10,6 @@ type Product struct {
 	Description string
 	CreatedAt   time.Time
 	UpdateAt    time.Time
-	IsDelete    bool
 	DiscountId  int
 	MerkId      int
 }

@@ -1,4 +1,4 @@
-package packet
+package entity
 
 type Packet struct {
 	Id       int
