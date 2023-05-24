@@ -3,7 +3,7 @@ package customerservice
 import (
 	"fmt"
 	"log"
-	entity "pancakaki/internal/domain/entity/customer"
+	"pancakaki/internal/domain/entity"
 	webcustomer "pancakaki/internal/domain/web/customer"
 	customerrepository "pancakaki/internal/repository/customer"
 	"pancakaki/utils/helper"

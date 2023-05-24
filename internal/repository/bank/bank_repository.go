@@ -1,11 +1,12 @@
 package bankrepository
 
-import entity "pancakaki/internal/domain/entity/bank"
+import "pancakaki/internal/domain/entity"
 
 type BankRepository interface {
 	Create(bank *entity.Bank) (*entity.Bank, error)
+	CreateBankAdmin(bankAdmin *entity.BankAdmin) (*entity.BankAdmin, error)
 	FindAll() ([]entity.Bank, error)
-	FindById(id int) (*entity.Bank, error)
+	FindByName(bankName string) (*entity.Bank, error)
 	Update(bank *entity.Bank) (*entity.Bank, error)
 	Delete(bankId int) error
 }

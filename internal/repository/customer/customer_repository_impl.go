@@ -2,7 +2,7 @@ package customerrepository
 
 import (
 	"database/sql"
-	entity "pancakaki/internal/domain/entity/customer"
+	"pancakaki/internal/domain/entity"
 )
 
 type CustomerRepositoryImpl struct {

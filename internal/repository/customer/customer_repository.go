@@ -1,6 +1,6 @@
 package customerrepository
 
-import entity "pancakaki/internal/domain/entity/customer"
+import "pancakaki/internal/domain/entity"
 
 type CustomerRepository interface {
 	Create(customer *entity.Customer) (*entity.Customer, error)
