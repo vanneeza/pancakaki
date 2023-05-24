@@ -1,15 +1,14 @@
 package entity
 
-import "time"
-
 type Product struct {
-	Id          int
-	Name        string
-	Price       int
-	Stock       int16
-	Description string
-	CreatedAt   time.Time
-	UpdateAt    time.Time
-	DiscountId  int
-	MerkId      int
+	Id           int
+	Name         string
+	Price        int
+	Stock        int16
+	Description  string
+	ShippingCost int
+	MerkId       int
+	StoreId      int
+	// CreatedAt    time.Time
+	// UpdateAt     time.Time
 }

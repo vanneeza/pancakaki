@@ -4,17 +4,29 @@ import (
 	"database/sql"
 	"fmt"
 	merkcontroller "pancakaki/api/controller/merk"
+	ownercontroller "pancakaki/api/controller/owner"
 	packetcontroller "pancakaki/api/controller/packet"
 	productcontroller "pancakaki/api/controller/product"
 	productimagecontroller "pancakaki/api/controller/product_image"
+	storecontroller "pancakaki/api/controller/store"
+	bankrepository "pancakaki/internal/repository/bank"
+	bankstorerepository "pancakaki/internal/repository/bank_store"
+	membershiprepository "pancakaki/internal/repository/membership"
 	merkrepository "pancakaki/internal/repository/merk"
+	ownerrepository "pancakaki/internal/repository/owner"
 	packetrepository "pancakaki/internal/repository/packet"
 	productrepository "pancakaki/internal/repository/product"
 	productimagerepository "pancakaki/internal/repository/product_image"
+	storerepository "pancakaki/internal/repository/store"
+	bankservice "pancakaki/internal/service/bank"
+	membershipservice "pancakaki/internal/service/membership"
 	merkservice "pancakaki/internal/service/merk"
+	ownerservice "pancakaki/internal/service/owner"
 	packetservice "pancakaki/internal/service/packet"
 	productservice "pancakaki/internal/service/product"
 	productimageservice "pancakaki/internal/service/product_image"
+	storeservice "pancakaki/internal/service/store"
+	"pancakaki/utils/helper"
 
 	"github.com/gin-gonic/gin"
 )
@@ -30,18 +42,60 @@ func Run(db *sql.DB) *gin.Engine {
 	packetService := packetservice.NewPacketService(packetRepository)
 	packetController := packetcontroller.NewPacketHandler(packetService)
 
-	productRepository := productrepository.NewProductRepository(db)
-	productService := productservice.NewProductService(productRepository)
-	productController := productcontroller.NewProductHandler(productService)
-
 	productImageRepository := productimagerepository.NewProductImageRepository(db)
 	productImageService := productimageservice.NewProductImageService(productImageRepository)
 	productImageController := productimagecontroller.NewProductImageHandler(productImageService)
 
+	membershipRepository := membershiprepository.NewMembershipRepository(db)
+	membershipService := membershipservice.NewMembershipService(membershipRepository)
+	// membershipController := membershipcontroller.NewMembershipHandler(membershipService)
+
+	bankRepository := bankrepository.NewBankRepository(db)
+	bankService := bankservice.NewBankService(bankRepository)
+
+	bankStoreRepository := bankstorerepository.NewBankStoreRepository(db)
+
+	ownerRepository := ownerrepository.NewOwnerRepository(db)
+	ownerService := ownerservice.NewOwnerService(ownerRepository)
+	ownerController := ownercontroller.NewOwnerHandler(ownerService, membershipService, bankService)
+
+	storeRepository := storerepository.NewStoreRepository(db, bankRepository, bankStoreRepository)
+	storeService := storeservice.NewStoreService(storeRepository)
+	storeController := storecontroller.NewStoreHandler(storeService, ownerService)
+
+	productRepository := productrepository.NewProductRepository(db)
+	productService := productservice.NewProductService(productRepository)
+	productController := productcontroller.NewProductHandler(productService, storeService)
+
+	var jwtKey = "secret_key"
 	pancakaki := r.Group("pancakaki/v1/")
-	merk := pancakaki.Group("/merks")
+
+	pancakaki.POST("/login", ownerController.LoginOwner)
+	pancakaki.POST("/", ownerController.CreateOwner)
+
+	owner := pancakaki.Group("/owner")
+	owner.Use(helper.AuthMiddleware(jwtKey))
 	{
-		merk.POST("/", merkController.InsertMerk)
+		//owner
+		owner.GET("/:ownername/profile", ownerController.GetOwnerById)
+		owner.PUT("/:ownername/profile", ownerController.UpdateOwner)
+		owner.PUT("/:ownername/profile/:id", ownerController.DeleteOwner)
+		//store
+		owner.POST("/:ownername/store", storeController.CreateMainStore)
+		owner.POST("/:ownername/store/storename", storeController.UpdateMainStore)
+		owner.POST("/:ownername/store/:storename/product", productController.InsertProduct)
+
+	}
+
+	merk := pancakaki.Group("/customers")
+	{
+		store := pancakaki.Group("/stores")
+		{
+			store.POST("/product", merkController.InsertMerk)
+			merk.POST("/merk", merkController.InsertMerk)
+			// packet.POST("/oacket", packetController.InsertPacket)
+		}
+
 		merk.GET("/", merkController.FindAllMerk)
 		merk.GET("/:id", merkController.FindMerkById)
 		merk.GET("/name/:name", merkController.FindMerkByName)
@@ -51,7 +105,7 @@ func Run(db *sql.DB) *gin.Engine {
 
 	packet := pancakaki.Group("/packets")
 	{
-		packet.POST("/", packetController.InsertPacket)
+
 		packet.GET("/", packetController.FindAllPacket)
 		packet.GET("/:id", packetController.FindpacketById)
 		packet.GET("/name/:name", packetController.FindPacketByName)

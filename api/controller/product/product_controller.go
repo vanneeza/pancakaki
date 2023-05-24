@@ -4,9 +4,12 @@ import (
 	"net/http"
 	entity "pancakaki/internal/domain/entity/product"
 	"pancakaki/internal/domain/web"
+	ownerservice "pancakaki/internal/service/owner"
 	productservice "pancakaki/internal/service/product"
+	storeservice "pancakaki/internal/service/store"
 	"strconv"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,6 +24,8 @@ type ProductHandler interface {
 
 type productHandler struct {
 	productService productservice.ProductService
+	storeService   storeservice.StoreService
+	ownerService   ownerservice.OwnerService
 }
 
 // DeleteProduct implements ProductHandler
@@ -153,6 +158,53 @@ func (h *productHandler) FindProductByName(ctx *gin.Context) {
 
 // InsertProduct implements ProductHandler
 func (h *productHandler) InsertProduct(ctx *gin.Context) {
+	ownerName := ctx.Param("ownername")
+	storeName := ctx.Param("storename")
+
+	getOwnerByName, err := h.ownerService.GetOwnerByName(ownerName)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "status internal server error",
+			Message: "status internal server error",
+			Data:    err.Error(),
+		}
+		ctx.JSON(http.StatusInternalServerError, result)
+		return
+	}
+	if getOwnerByName == nil {
+		result := web.WebResponse{
+			Code:    http.StatusNotFound,
+			Status:  "status not found",
+			Message: "status not found",
+			Data:    "owner with name " + ownerName + " not found",
+		}
+		ctx.JSON(http.StatusInternalServerError, result)
+		return
+	}
+
+	getStoreByName, err := h.storeService.GetStoreByName(storeName)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "status internal server error",
+			Message: "status internal server error",
+			Data:    err.Error(),
+		}
+		ctx.JSON(http.StatusInternalServerError, result)
+		return
+	}
+	if getStoreByName == nil {
+		result := web.WebResponse{
+			Code:    http.StatusNotFound,
+			Status:  "status not found",
+			Message: "status not found",
+			Data:    "store with name " + storeName + " not found",
+		}
+		ctx.JSON(http.StatusInternalServerError, result)
+		return
+	}
+
 	var product entity.Product
 	if err := ctx.ShouldBindJSON(&product); err != nil {
 		result := web.WebResponse{
@@ -164,6 +216,25 @@ func (h *productHandler) InsertProduct(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, result)
 		return
 	}
+
+	claims := ctx.MustGet("claims").(jwt.MapClaims)
+	ownerId := claims["ownerId"].(string)
+	// noHpStore := claims["nohp"].(string)
+	ownerIdInt, _ := strconv.Atoi(ownerId)
+
+	getStoreByOwnerId, err := h.storeService.GetStoreByOwnerId(ownerIdInt)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "status internal server error",
+			Message: "status internal server error",
+			Data:    err.Error(),
+		}
+		ctx.JSON(http.StatusInternalServerError, result)
+		return
+	}
+
+	product.StoreId = getStoreByOwnerId.OwnerId
 
 	newProduct, err := h.productService.InsertProduct(&product)
 	if err != nil {
@@ -232,6 +303,10 @@ func (h *productHandler) UpdateProduct(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, result)
 }
 
-func NewProductHandler(productService productservice.ProductService) ProductHandler {
-	return &productHandler{productService: productService}
+func NewProductHandler(
+	productService productservice.ProductService,
+	storeService storeservice.StoreService) ProductHandler {
+	return &productHandler{
+		productService: productService,
+		storeService:   storeService}
 }

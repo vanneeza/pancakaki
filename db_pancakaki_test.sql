@@ -2,22 +2,37 @@ CREATE TABLE tbl_admin(
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(50),
 	password VARCHAR(100),
-	is_delete bool default false
+	is_delete bool default false,
+	FOREIGN KEY (role_id) REFERENCES tbl_bank(id)
 	);
 
 CREATE TABLE tbl_store(
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(50),
-	password VARCHAR(100),
+	description VARCHAR(50),
+	address TEXT,
+	customer_id INT,
 	is_delete bool default false
-	);
+);
+
+CREATE TABLE tbl_employee(
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(50),
+	password VARCHAR(50),
+	store_id INT,
+	is_delete bool default false
+);
 
 CREATE TABLE tbl_customer(
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(50),
-	no_hp BIGINT,
+	password VARCHAR(50),
+	no_hp BIGINT UNIQUE,
+	email VARCHAR(50),
 	address TEXT,
 	photo VARCHAR(200),
+	loyalti INT,
+	balance INT,
 	bank_id INT,
 	account_number BIGINT,
 	is_delete bool default false,
@@ -44,7 +59,7 @@ CREATE TABLE tbl_merk(
 	FOREIGN KEY (store_id) REFERENCES tbl_store(id)
 	);
 
-CREATE TABLE tbl_packet(
+CREATE TABLE tbl_courier(
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(50),
 	interval smallint,
@@ -70,8 +85,8 @@ CREATE TABLE tbl_product(
 	description TEXT,
 	created_at date,
 	update_at date,
-	discount_id int,
-	merk_id int,
+	discount_id INT,
+	merk_id INT,
 	store_id INT,
 	is_delete bool default false,
 	FOREIGN KEY (discount_id) REFERENCES tbl_discount(id),
