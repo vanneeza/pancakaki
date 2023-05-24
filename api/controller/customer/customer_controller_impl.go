@@ -1,15 +1,11 @@
 package customercontroller
 
 import (
-	"fmt"
-	"log"
-	"mime/multipart"
 	"net/http"
 	"pancakaki/internal/domain/web"
 	webcustomer "pancakaki/internal/domain/web/customer"
 	customerservice "pancakaki/internal/service/customer"
 	"pancakaki/utils/helper"
-	"path/filepath"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -28,29 +24,9 @@ func NewCustomerController(customerService customerservice.CustomerService) Cust
 func (customerController *CustomerControllerImpl) Register(context *gin.Context) {
 
 	var customer webcustomer.CustomerCreateRequest
-	var file *multipart.FileHeader
 
 	err := context.ShouldBind(&customer)
 	helper.InternalServerError(err, context)
-
-	file, err = context.FormFile("photo")
-	helper.InternalServerError(err, context)
-
-	log.Println(customer, "ini data customer")
-	log.Println(file, "ini data file")
-	fmt.Scanln()
-
-	uploadDir := "document/uploads/customer_profile/"
-	if file != nil {
-		uploadPath := filepath.Join(uploadDir, file.Filename)
-		err = context.SaveUploadedFile(file, uploadPath)
-		helper.InternalServerError(err, context)
-
-		customer.Photo = file
-	}
-
-	log.Println(customer, "ini data customer sebelum masuk register")
-	log.Println(customer.Address, "address kemana")
 
 	customerResponse, err := customerController.customerService.Register(customer)
 	helper.InternalServerError(err, context)
@@ -80,14 +56,14 @@ func (customerController *CustomerControllerImpl) ViewAll(context *gin.Context) 
 }
 
 func (customerController *CustomerControllerImpl) ViewOne(context *gin.Context) {
-	customerId, _ := strconv.Atoi(context.Param("id"))
-	customerResponse, err := customerController.customerService.ViewOne(customerId)
+	customerName := context.Param("name")
+	customerResponse, err := customerController.customerService.ViewOne(customerName)
 	helper.InternalServerError(err, context)
 
 	webResponses := web.WebResponse{
 		Code:    http.StatusOK,
 		Status:  "OK",
-		Message: "customer data by customer ID",
+		Message: "customer profile data by customer name",
 		Data:    customerResponse,
 	}
 	context.JSON(http.StatusOK, gin.H{"customer": webResponses})
@@ -114,8 +90,8 @@ func (customerController *CustomerControllerImpl) Edit(context *gin.Context) {
 }
 
 func (customerController *CustomerControllerImpl) Unreg(context *gin.Context) {
-	customerId, _ := strconv.Atoi(context.Param("id"))
-	customerResponse, err := customerController.customerService.Unreg(customerId)
+	customerName := context.Param("id")
+	customerResponse, err := customerController.customerService.Unreg(customerName)
 	helper.InternalServerError(err, context)
 
 	webResponses := web.WebResponse{

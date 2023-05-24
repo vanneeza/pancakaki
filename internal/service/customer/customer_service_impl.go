@@ -22,27 +22,24 @@ func NewCustomerService(customerRepository customerrepository.CustomerRepository
 func (customerService *CustomerServiceImpl) Register(req webcustomer.CustomerCreateRequest) (webcustomer.CustomerResponse, error) {
 
 	customer := entity.Customer{
-		Name:    req.Name,
-		NoHp:    req.NoHp,
-		Address: req.Address,
-		Photo:   req.Photo.Filename,
-		Balance: req.Balance,
+		Name:     req.Name,
+		NoHp:     req.NoHp,
+		Address:  req.Address,
+		Password: req.Password,
 	}
-
-	log.Println(customer, "Ini data Customer")
+	log.Println(customer, "service reg")
+	log.Println(req, "service reg")
 	fmt.Scanln()
 	customerData, _ := customerService.CustomerRepository.Create(&customer)
 
-	log.Println(customerData, "Ini data Customer Data")
-	fmt.Scanln()
 	customerResponse := webcustomer.CustomerResponse{
-		Id:      customerData.Id,
-		Name:    customerData.Name,
-		NoHp:    customerData.NoHp,
-		Address: customerData.Address,
-		Photo:   customerData.Photo,
-		Balance: customerData.Balance,
+		Id:       customerData.Id,
+		Name:     customerData.Name,
+		NoHp:     customerData.NoHp,
+		Address:  customerData.Address,
+		Password: customerData.Password,
 	}
+
 	return customerResponse, nil
 }
 
@@ -53,28 +50,26 @@ func (customerService *CustomerServiceImpl) ViewAll() ([]webcustomer.CustomerRes
 	customerResponse := make([]webcustomer.CustomerResponse, len(customerData))
 	for i, customer := range customerData {
 		customerResponse[i] = webcustomer.CustomerResponse{
-			Id:      customer.Id,
-			Name:    customer.Name,
-			NoHp:    customer.NoHp,
-			Address: customer.Address,
-			Photo:   customer.Photo,
-			Balance: customer.Balance,
+			Id:       customer.Id,
+			Name:     customer.Name,
+			NoHp:     customer.NoHp,
+			Address:  customer.Address,
+			Password: customer.Password,
 		}
 	}
 	return customerResponse, nil
 }
 
-func (customerService *CustomerServiceImpl) ViewOne(customerId int) (webcustomer.CustomerResponse, error) {
-	customer, err := customerService.CustomerRepository.FindById(customerId)
+func (customerService *CustomerServiceImpl) ViewOne(customerName string) (webcustomer.CustomerResponse, error) {
+	customer, err := customerService.CustomerRepository.FindByName(customerName)
 	helper.PanicErr(err)
 
 	customerResponse := webcustomer.CustomerResponse{
-		Id:      customerId,
-		Name:    customer.Name,
-		NoHp:    customer.NoHp,
-		Address: customer.Address,
-		Photo:   customer.Photo,
-		Balance: customer.Balance,
+		Id:       customer.Id,
+		Name:     customer.Name,
+		NoHp:     customer.NoHp,
+		Address:  customer.Address,
+		Password: customer.Password,
 	}
 
 	return customerResponse, nil
@@ -83,43 +78,40 @@ func (customerService *CustomerServiceImpl) ViewOne(customerId int) (webcustomer
 func (customerService *CustomerServiceImpl) Edit(req webcustomer.CustomerUpdateRequest) (webcustomer.CustomerResponse, error) {
 
 	customer := entity.Customer{
-		Id:      req.Id,
-		Name:    req.Name,
-		NoHp:    req.NoHp,
-		Address: req.Address,
-		Photo:   req.Photo,
-		Balance: req.Balance,
+		Id:       req.Id,
+		Name:     req.Name,
+		NoHp:     req.NoHp,
+		Address:  req.Address,
+		Password: req.Password,
 	}
 
 	customerData, err := customerService.CustomerRepository.Update(&customer)
 	helper.PanicErr(err)
 
 	customerResponse := webcustomer.CustomerResponse{
-		Id:      customerData.Id,
-		Name:    customerData.Name,
-		NoHp:    customerData.NoHp,
-		Address: customerData.Address,
-		Photo:   customerData.Photo,
-		Balance: customerData.Balance,
+		Id:       customerData.Id,
+		Name:     customerData.Name,
+		NoHp:     customerData.NoHp,
+		Address:  customerData.Address,
+		Password: customerData.Password,
 	}
 
 	return customerResponse, nil
 }
 
-func (customerService *CustomerServiceImpl) Unreg(customerId int) (webcustomer.CustomerResponse, error) {
+func (customerService *CustomerServiceImpl) Unreg(customerName string) (webcustomer.CustomerResponse, error) {
 
-	customerData, err := customerService.CustomerRepository.FindById(customerId)
+	customerData, err := customerService.CustomerRepository.FindByName(customerName)
 	helper.PanicErr(err)
 
-	err = customerService.CustomerRepository.Delete(customerId)
+	err = customerService.CustomerRepository.Delete(customerData.Id)
 	helper.PanicErr(err)
 
 	customerResponse := webcustomer.CustomerResponse{
-		Name:    customerData.Name,
-		NoHp:    customerData.NoHp,
-		Address: customerData.Address,
-		Photo:   customerData.Photo,
-		Balance: customerData.Balance,
+		Name:     customerData.Name,
+		NoHp:     customerData.NoHp,
+		Address:  customerData.Address,
+		Password: customerData.Password,
 	}
 
 	return customerResponse, nil

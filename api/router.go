@@ -60,15 +60,17 @@ func Run(db *sql.DB) *gin.Engine {
 		admin.GET("/owner/profiles/", adminController.ViewAllOwner)
 		admin.GET("/owner/profile/:name", adminController.ViewOwnerByName)
 
+		admin.GET("/customer/profiles/", customerController.ViewAll)
+		admin.GET("/customer/profile/:name", customerController.ViewOne)
 	}
 
 	customer := pancakaki.Group("/customers")
 	{
 		customer.POST("/", customerController.Register)
 		customer.GET("/", customerController.ViewAll)
-		customer.GET("/:id", customerController.ViewOne)
+		customer.GET("/:name", customerController.ViewOne)
 		customer.PUT("/:id", customerController.Edit)
-		customer.DELETE("/:id", customerController.Unreg)
+		customer.DELETE("/:name", customerController.Unreg)
 	}
 
 	r.GET("/hello", func(c *gin.Context) {

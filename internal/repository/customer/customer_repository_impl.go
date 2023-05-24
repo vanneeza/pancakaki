@@ -16,13 +16,13 @@ func NewCustomerRepository(Db *sql.DB) CustomerRepository {
 }
 
 func (r *CustomerRepositoryImpl) Create(customer *entity.Customer) (*entity.Customer, error) {
-	stmt, err := r.Db.Prepare("INSERT INTO tbl_customer (name, no_hp, address, photo, balance) VALUES ($1, $2, $3, $4, $5) RETURNING id")
+	stmt, err := r.Db.Prepare("INSERT INTO tbl_customer (name, no_hp, address, password) VALUES ($1, $2, $3, $4) RETURNING id")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
-	err = stmt.QueryRow(customer.Name, customer.NoHp, customer.Address, customer.Photo, customer.Balance).Scan(&customer.Id)
+	err = stmt.QueryRow(customer.Name, customer.NoHp, customer.Address, customer.Password).Scan(&customer.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (r *CustomerRepositoryImpl) Create(customer *entity.Customer) (*entity.Cust
 
 func (r *CustomerRepositoryImpl) FindAll() ([]entity.Customer, error) {
 	var tbl_customer []entity.Customer
-	rows, err := r.Db.Query("SELECT id, name, no_hp, address, photo, balance FROM tbl_customer")
+	rows, err := r.Db.Query("SELECT id, name, no_hp, address, password FROM tbl_customer")
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (r *CustomerRepositoryImpl) FindAll() ([]entity.Customer, error) {
 
 	for rows.Next() {
 		var customer entity.Customer
-		err := rows.Scan(&customer.Id, &customer.Name, &customer.NoHp, &customer.Address, &customer.Photo, &customer.Balance)
+		err := rows.Scan(&customer.Id, &customer.Name, &customer.NoHp, &customer.Address, &customer.Password)
 		if err != nil {
 			return nil, err
 		}
@@ -50,16 +50,16 @@ func (r *CustomerRepositoryImpl) FindAll() ([]entity.Customer, error) {
 	return tbl_customer, nil
 }
 
-func (r *CustomerRepositoryImpl) FindById(id int) (*entity.Customer, error) {
+func (r *CustomerRepositoryImpl) FindByName(customerName string) (*entity.Customer, error) {
 	var customer entity.Customer
-	stmt, err := r.Db.Prepare("SELECT id, name, no_hp, address, photo, balance FROM tbl_customer WHERE id = $1")
+	stmt, err := r.Db.Prepare("SELECT id, name, no_hp, address, password FROM tbl_customer WHERE name = $1")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
-	row := stmt.QueryRow(id)
-	err = row.Scan(&customer.Id, &customer.Name, &customer.NoHp, &customer.Address, &customer.Photo, &customer.Balance)
+	row := stmt.QueryRow(customerName)
+	err = row.Scan(&customer.Id, &customer.Name, &customer.NoHp, &customer.Address, &customer.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -68,13 +68,13 @@ func (r *CustomerRepositoryImpl) FindById(id int) (*entity.Customer, error) {
 }
 
 func (r *CustomerRepositoryImpl) Update(customer *entity.Customer) (*entity.Customer, error) {
-	stmt, err := r.Db.Prepare("UPDATE tbl_customer SET name = $1, no_hp = $2,  address = $3,  photo = $4 , balance = $5 WHERE id = $6")
+	stmt, err := r.Db.Prepare("UPDATE tbl_customer SET name = $1, no_hp = $2,  address = $3,  password = $4 WHERE id = $5")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(customer.Name, customer.NoHp, customer.Address, customer.Photo, customer.Balance, customer.Id)
+	_, err = stmt.Exec(customer.Name, customer.NoHp, customer.Address, customer.Password, customer.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (r *CustomerRepositoryImpl) Update(customer *entity.Customer) (*entity.Cust
 }
 
 func (r *CustomerRepositoryImpl) Delete(customerId int) error {
-	stmt, err := r.Db.Prepare("DELETE FROM tbl_customer WHERE id = $1")
+	stmt, err := r.Db.Prepare("UPDATE tbl_customer SET is_deleted = TRUE WHERE id = $1")
 	if err != nil {
 		return err
 	}
