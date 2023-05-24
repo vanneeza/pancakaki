@@ -3,7 +3,7 @@ package merkrepository
 import (
 	"database/sql"
 	"fmt"
-	entity "pancakaki/internal/domain/entity/merk"
+	"pancakaki/internal/domain/entity"
 )
 
 type MerkRepository interface {

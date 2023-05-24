@@ -1,6 +1,6 @@
 package webowner
 
-import entity "pancakaki/internal/domain/entity/bank"
+import "pancakaki/internal/domain/entity"
 
 type OwnerCreateResponse struct {
 	Id              int
@@ -9,7 +9,7 @@ type OwnerCreateResponse struct {
 	Email           string
 	Password        string
 	MembershipName  string
-	MembershipPrice int
+	MembershipPrice int64
 	Bank            []entity.Bank
 	Token           string
 	// BankAccount     int64

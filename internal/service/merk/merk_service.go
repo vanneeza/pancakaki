@@ -1,7 +1,7 @@
 package merkservice
 
 import (
-	entity "pancakaki/internal/domain/entity/merk"
+	"pancakaki/internal/domain/entity"
 	merkrepository "pancakaki/internal/repository/merk"
 )
 

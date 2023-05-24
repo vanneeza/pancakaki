@@ -6,3 +6,9 @@ type Bank struct {
 	BankAccount int64
 	AccountName string
 }
+
+type BankAdmin struct {
+	Id      int
+	AdminId int
+	BankId  int
+}

@@ -1,6 +1,6 @@
 package webadmin
 
 type AdminCreateRequest struct {
-	Name     string `json:"name"`
+	Username string `json:"username"`
 	Passowrd string `json:"password"`
 }

@@ -1,8 +1,8 @@
 package bankservice
 
 import (
-	entity "pancakaki/internal/domain/entity/bank"
-	bankrepository "pancakaki/internal/repository/bank"
+	"pancakaki/internal/domain/entity"
+	bankstorerepository "pancakaki/internal/repository/bank"
 )
 
 type BankService interface {
@@ -10,13 +10,13 @@ type BankService interface {
 }
 
 type bankService struct {
-	bankRepo bankrepository.BankRepository
+	bankRepo bankstorerepository.BankStoreRepository
 }
 
 func (s *bankService) GetBankAdminById(id int) ([]entity.Bank, error) {
 	return s.bankRepo.GetBankAdminById(id)
 }
 
-func NewBankService(bankRepo bankrepository.BankRepository) BankService {
+func NewBankService(bankRepo bankstorerepository.BankStoreRepository) BankService {
 	return &bankService{bankRepo: bankRepo}
 }

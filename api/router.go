@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	"fmt"
+<<<<<<< HEAD
 	merkcontroller "pancakaki/api/controller/merk"
 	ownercontroller "pancakaki/api/controller/owner"
 	packetcontroller "pancakaki/api/controller/packet"
@@ -27,6 +28,18 @@ import (
 	productimageservice "pancakaki/internal/service/product_image"
 	storeservice "pancakaki/internal/service/store"
 	"pancakaki/utils/helper"
+=======
+	admincontroller "pancakaki/api/controller/admin"
+	customercontroller "pancakaki/api/controller/customer"
+	membershipcontroller "pancakaki/api/controller/membership"
+	adminrepository "pancakaki/internal/repository/admin"
+	bankrepository "pancakaki/internal/repository/bank"
+	customerrepository "pancakaki/internal/repository/customer"
+	membershiprepository "pancakaki/internal/repository/membership"
+	adminservice "pancakaki/internal/service/admin"
+	customerservice "pancakaki/internal/service/customer"
+	membershipservice "pancakaki/internal/service/membership"
+>>>>>>> chauzar
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,6 +47,7 @@ import (
 func Run(db *sql.DB) *gin.Engine {
 	r := gin.Default()
 
+<<<<<<< HEAD
 	merkRepository := merkrepository.NewMerkRepository(db)
 	merkService := merkservice.NewMerkService(merkRepository)
 	merkController := merkcontroller.NewMerkHandler(merkService)
@@ -131,6 +145,59 @@ func Run(db *sql.DB) *gin.Engine {
 		productImage.GET("/name/:name", productImageController.FindProductImageByName)
 		productImage.PUT("/", productImageController.UpdateProductImage)
 		productImage.PUT("/:id", productImageController.DeleteProductImage)
+=======
+	bankRepository := bankrepository.NewBankRepository(db)
+	adminRepository := adminrepository.NewAdminRepository(db)
+	adminService := adminservice.NewAdminService(adminRepository, bankRepository)
+	adminController := admincontroller.NewAdminController(adminService)
+
+	customerRepository := customerrepository.NewCustomerRepository(db)
+	customerService := customerservice.NewCustomerService(customerRepository)
+	customerController := customercontroller.NewCustomerController(customerService)
+
+	membershipRepository := membershiprepository.NewMembershipRepository(db)
+	membershipService := membershipservice.NewMembershipService(membershipRepository)
+	membershipController := membershipcontroller.NewMembershipController(membershipService)
+
+	pancakaki := r.Group("pancakaki/v1")
+
+	admin := pancakaki.Group("/admins")
+	{
+		admin.POST("/", adminController.Register)
+		admin.GET("/", adminController.ViewAll)
+		admin.GET("/:id", adminController.ViewOne)
+		admin.PUT("/:id", adminController.Edit)
+		admin.DELETE("/:id", adminController.Unreg)
+
+		admin.POST("/bank/:id", adminController.RegisterBank)
+		admin.PUT("/bank/:id", adminController.EditBank)
+		admin.GET("/banks/", adminController.ViewAllBank)
+		admin.GET("/bank/:name", adminController.ViewOneBank)
+
+		admin.POST("/membership/", membershipController.Register)
+		admin.GET("/memberships/", membershipController.ViewAll)
+		admin.GET("/membership/:id", membershipController.ViewOne)
+		admin.PUT("/membership/:id", membershipController.Edit)
+		admin.DELETE("/membership/:id", membershipController.Unreg)
+
+		admin.GET("/transaction_history/owners", adminController.ViewTransactionAllOwner)
+		admin.GET("/transaction_history/owner/:name", adminController.ViewTransactionOwnerByName)
+
+		admin.GET("/owner/profiles/", adminController.ViewAllOwner)
+		admin.GET("/owner/profile/:name", adminController.ViewOwnerByName)
+
+		admin.GET("/customer/profiles/", customerController.ViewAll)
+		admin.GET("/customer/profile/:name", customerController.ViewOne)
+	}
+
+	customer := pancakaki.Group("/customers")
+	{
+		customer.POST("/", customerController.Register)
+		customer.GET("/", customerController.ViewAll)
+		customer.GET("/:name", customerController.ViewOne)
+		customer.PUT("/:id", customerController.Edit)
+		customer.DELETE("/:name", customerController.Unreg)
+>>>>>>> chauzar
 	}
 
 	r.GET("/hello", func(c *gin.Context) {

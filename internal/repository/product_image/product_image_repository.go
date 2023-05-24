@@ -3,7 +3,7 @@ package productimagerepository
 import (
 	"database/sql"
 	"fmt"
-	entity "pancakaki/internal/domain/entity/product_image"
+	"pancakaki/internal/domain/entity"
 )
 
 type ProductImageRepository interface {

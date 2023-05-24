@@ -2,7 +2,7 @@ package merkcontroller
 
 import (
 	"net/http"
-	entity "pancakaki/internal/domain/entity/merk"
+	"pancakaki/internal/domain/entity"
 	"pancakaki/internal/domain/web"
 	merkservice "pancakaki/internal/service/merk"
 	"strconv"

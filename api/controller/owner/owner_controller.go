@@ -46,7 +46,7 @@ func (h *ownerHandler) CreateOwner(ctx *gin.Context) {
 		return
 	}
 
-	getMembershipById, err := h.membershipService.GetMembershipById(owner.MembershipId)
+	getMembershipById, err := h.membershipService.ViewOne(owner.MembershipId)
 	if err != nil {
 		result := web.WebResponse{
 			Code:    http.StatusInternalServerError,

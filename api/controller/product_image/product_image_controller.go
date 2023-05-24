@@ -3,7 +3,7 @@ package productimagecontroller
 import (
 	"log"
 	"net/http"
-	entity "pancakaki/internal/domain/entity/product_image"
+	"pancakaki/internal/domain/entity"
 	"pancakaki/internal/domain/web"
 	productimageservice "pancakaki/internal/service/product_image"
 	"path/filepath"

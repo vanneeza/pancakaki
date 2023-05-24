@@ -3,12 +3,13 @@ package storerepository
 import (
 	"database/sql"
 	"fmt"
-	entitybank "pancakaki/internal/domain/entity/bank"
+	entitybank "pancakaki/internal/domain/entity"
 	entitybankstore "pancakaki/internal/domain/entity/bank_store"
 	entitystore "pancakaki/internal/domain/entity/store"
 	webstore "pancakaki/internal/domain/web/store"
-	bankrepository "pancakaki/internal/repository/bank"
-	bankstorerepository "pancakaki/internal/repository/bank_store"
+
+	// bankrepository "pancakaki/internal/repository/bank"
+	bankstorerepository "pancakaki/internal/repository/bank"
 )
 
 type StoreRepository interface {
@@ -21,8 +22,8 @@ type StoreRepository interface {
 }
 
 type storeRepository struct {
-	db            *sql.DB
-	repoBank      bankrepository.BankRepository
+	db *sql.DB
+	// repoBank      bankstorerepository.BankStoreRepository
 	repoBankStore bankstorerepository.BankStoreRepository
 }
 
@@ -49,7 +50,7 @@ func (repo *storeRepository) CreateMainStore(newTransactionStore *webstore.Store
 		return nil, fmt.Errorf("failed to create store : %w", err)
 	}
 
-	bank, err := repo.repoBank.CreateBank(&newBank, tx)
+	bank, err := repo.repoBankStore.CreateBank(&newBank, tx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bank : %w", err)
 	}
@@ -181,7 +182,7 @@ func (repo *storeRepository) UpdateMainStore(newUpdateStore *webstore.StoreCreat
 		return nil, fmt.Errorf("failed to update store : %w", err)
 	}
 
-	bank, err := repo.repoBank.UpdateBank(&updateBank, tx)
+	bank, err := repo.repoBankStore.UpdateBank(&updateBank, tx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update bank : %w", err)
 	}
@@ -205,11 +206,11 @@ func (repo *storeRepository) UpdateMainStore(newUpdateStore *webstore.StoreCreat
 
 func NewStoreRepository(
 	db *sql.DB,
-	repoBank bankrepository.BankRepository,
+	// repoBank bankrepository.BankRepository,
 	repoBankStore bankstorerepository.BankStoreRepository,
 ) StoreRepository {
 	return &storeRepository{
-		db:            db,
-		repoBank:      repoBank,
+		db: db,
+		// repoBank:      repoBank,
 		repoBankStore: repoBankStore}
 }

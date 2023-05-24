@@ -1,7 +1,7 @@
 package productimageservice
 
 import (
-	entity "pancakaki/internal/domain/entity/product_image"
+	"pancakaki/internal/domain/entity"
 	productimagerepository "pancakaki/internal/repository/product_image"
 )
 
