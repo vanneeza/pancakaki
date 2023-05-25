@@ -21,7 +21,7 @@ type merkRepository struct {
 
 // DeleteMerk implements MerkRepository
 func (repo *merkRepository) DeleteMerk(deleteMerk *entity.Merk) error {
-	stmt, err := repo.db.Prepare("UPDATE tbl_merk SET is_delete = true WHERE id = $1")
+	stmt, err := repo.db.Prepare("UPDATE tbl_merk SET is_deleted = true WHERE id = $1")
 	if err != nil {
 		return fmt.Errorf("failed to delete merk : %w", err)
 	}
