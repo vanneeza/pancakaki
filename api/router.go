@@ -10,6 +10,7 @@ import (
 	productcontroller "pancakaki/api/controller/product"
 	productimagecontroller "pancakaki/api/controller/product_image"
 	storecontroller "pancakaki/api/controller/store"
+	transactioncontroller "pancakaki/api/controller/transaction"
 	adminrepository "pancakaki/internal/repository/admin"
 	bankrepository "pancakaki/internal/repository/bank"
 	bankstorerepository "pancakaki/internal/repository/bank_store"
@@ -20,6 +21,7 @@ import (
 	productrepository "pancakaki/internal/repository/product"
 	productimagerepository "pancakaki/internal/repository/product_image"
 	storerepository "pancakaki/internal/repository/store"
+	transactionrepository "pancakaki/internal/repository/transaction"
 	adminservice "pancakaki/internal/service/admin"
 	bankservice "pancakaki/internal/service/bank"
 	customerservice "pancakaki/internal/service/customer"
@@ -29,6 +31,7 @@ import (
 	productservice "pancakaki/internal/service/product"
 	productimageservice "pancakaki/internal/service/product_image"
 	storeservice "pancakaki/internal/service/store"
+	transactionservice "pancakaki/internal/service/transaction"
 	"pancakaki/utils/helper"
 
 	"github.com/gin-gonic/gin"
@@ -80,6 +83,10 @@ func Run(db *sql.DB) *gin.Engine {
 	adminRepository := adminrepository.NewAdminRepository(db)
 	adminService := adminservice.NewAdminService(adminRepository, bankRepoCha, ownerRepository, customerRepository)
 	adminController := admincontroller.NewAdminController(adminService)
+
+	transactionRepositoryCha := transactionrepository.NewTransactionRepository(db)
+	transactionServiceCHa := transactionservice.NewTransactionService(transactionRepositoryCha)
+	transactionController := transactioncontroller.NewTransactionController(transactionServiceCHa)
 
 	var jwtKey = "secret_key"
 	pancakaki := r.Group("pancakaki/v1/")
@@ -178,6 +185,11 @@ func Run(db *sql.DB) *gin.Engine {
 		customer.GET("/:name", customerController.ViewOne)
 		customer.PUT("/:id", customerController.Edit)
 		customer.DELETE("/:name", customerController.Unreg)
+
+		customer.POST("/transaction", transactionController.MakeOrder)
+
+		////------------------- TEST PAYMENT --------------//
+		customer.POST("/payment", transactionController.CreatePaymentIntent)
 	}
 	return r
 }
