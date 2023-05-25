@@ -9,6 +9,7 @@ type Product struct {
 	ShippingCost int
 	MerkId       int
 	StoreId      int
+	IsDeleted    bool
 	// CreatedAt    time.Time
 	// UpdateAt     time.Time
 }

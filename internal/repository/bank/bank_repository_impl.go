@@ -85,7 +85,7 @@ func (r *BankRepositoryImpl) FindByName(bankName string) (*entity.Bank, error) {
 }
 
 func (r *BankRepositoryImpl) Update(bank *entity.Bank) (*entity.Bank, error) {
-	stmt, err := r.Db.Prepare(`UPDATE tbl_bank 
+	stmt, err := r.Db.Prepare(`UPDATE tbl_bank
 	SET name = $1, bank_account = $2, account_name = $3
 	WHERE id IN (SELECT bank_id FROM tbl_bank_admin WHERE admin_id = $4)`)
 	if err != nil {

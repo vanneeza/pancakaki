@@ -21,7 +21,7 @@ type merkRepository struct {
 
 // DeleteMerk implements MerkRepository
 func (repo *merkRepository) DeleteMerk(deleteMerk *entity.Merk) error {
-	stmt, err := repo.db.Prepare("UPDATE tbl_merk SET is_delete = true WHERE id = $1")
+	stmt, err := repo.db.Prepare("UPDATE tbl_merk SET is_deleted = true WHERE id = $1")
 	if err != nil {
 		return fmt.Errorf("failed to delete merk : %w", err)
 	}
@@ -38,7 +38,7 @@ func (repo *merkRepository) DeleteMerk(deleteMerk *entity.Merk) error {
 // FindAllMerk implements MerkRepository
 func (repo *merkRepository) FindAllMerk() ([]entity.Merk, error) {
 	var merks []entity.Merk
-	rows, err := repo.db.Query("SELECT id, name FROM tbl_merk")
+	rows, err := repo.db.Query("SELECT id, name FROM tbl_merk where is_deleted = FALSE")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get merk : %w", err)
 	}

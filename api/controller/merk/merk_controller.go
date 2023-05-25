@@ -2,236 +2,109 @@ package merkcontroller
 
 import (
 	"net/http"
-	"pancakaki/internal/domain/entity"
 	"pancakaki/internal/domain/web"
+	webmerk "pancakaki/internal/domain/web/merk"
 	merkservice "pancakaki/internal/service/merk"
+	"pancakaki/utils/helper"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
-type MerkHandler interface {
-	InsertMerk(ctx *gin.Context)
-	UpdateMerk(ctx *gin.Context)
-	DeleteMerk(ctx *gin.Context)
-	FindMerkById(ctx *gin.Context)
-	FindMerkByName(ctx *gin.Context)
-	FindAllMerk(ctx *gin.Context)
+type MerkController interface {
+	Register(context *gin.Context)
+	ViewAll(context *gin.Context)
+	ViewOne(context *gin.Context)
+	Edit(context *gin.Context)
+	Unreg(context *gin.Context)
 }
-
-type merkHandler struct {
+type MerkControllerImpl struct {
 	merkService merkservice.MerkService
 }
 
-// DeleteMerk implements MerkHandler
-func (h *merkHandler) DeleteMerk(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusBadRequest,
-			Status:  "bad request",
-			Message: "bad request",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusBadRequest, result)
-		return
+func NewMerkController(merkService merkservice.MerkService) MerkController {
+	return &MerkControllerImpl{
+		merkService: merkService,
 	}
-	var merk entity.Merk
-	merk.Id = id
-
-	if err := ctx.ShouldBindJSON(&merk); err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusInternalServerError,
-			Status:  "status internal server error",
-			Message: "status internal server error",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-	err = h.merkService.DeleteMerk(&merk)
-	if err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusInternalServerError,
-			Status:  "status internal server error",
-			Message: "status internal server error",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-	result := web.WebResponse{
-		Code:    http.StatusOK,
-		Status:  "delete success",
-		Message: "success delete merk with id " + idParam,
-		Data:    err,
-	}
-	ctx.JSON(http.StatusOK, result)
 }
 
-// FindAllMerk implements MerkHandler
-func (h *merkHandler) FindAllMerk(ctx *gin.Context) {
-	merkList, err := h.merkService.FindAllMerk()
-	if err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusInternalServerError,
-			Status:  "status internal server error",
-			Message: "status internal server error",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-	result := web.WebResponse{
-		Code:    http.StatusOK,
-		Status:  "success get merk list",
-		Message: "success get merk list",
-		Data:    merkList,
-	}
-	ctx.JSON(http.StatusOK, result)
-}
+func (merkController *MerkControllerImpl) Register(context *gin.Context) {
+	var merk webmerk.MerkCreateRequest
 
-// FindMerkById implements MerkHandler
-func (h *merkHandler) FindMerkById(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusBadRequest,
-			Status:  "bad request",
-			Message: "bad request",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusBadRequest, result)
-		return
-	}
+	err := context.ShouldBind(&merk)
+	helper.InternalServerError(err, context)
 
-	merkById, err := h.merkService.FindMerkById(id)
-	if err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusInternalServerError,
-			Status:  "status internal server error",
-			Message: "status internal server error",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-	result := web.WebResponse{
-		Code:    http.StatusOK,
-		Status:  "get by id success",
-		Message: "success get merk with id " + idParam,
-		Data:    merkById,
-	}
-	ctx.JSON(http.StatusOK, result)
-}
+	merkResponse, err := merkController.merkService.Register(merk)
+	helper.InternalServerError(err, context)
 
-// FindMerkByName implements MerkHandler
-func (h *merkHandler) FindMerkByName(ctx *gin.Context) {
-	merkName := ctx.Param("name")
-
-	merkByName, err := h.merkService.FindMerkByName(merkName)
-	if err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusInternalServerError,
-			Status:  "status internal server error",
-			Message: "status internal server error",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-	result := web.WebResponse{
-		Code:    http.StatusOK,
-		Status:  "get by name success",
-		Message: "success get merk with name " + merkName,
-		Data:    merkByName,
-	}
-	ctx.JSON(http.StatusOK, result)
-}
-
-// InsertMerk implements MerkHandler
-func (h *merkHandler) InsertMerk(ctx *gin.Context) {
-	var merk entity.Merk
-	if err := ctx.ShouldBindJSON(&merk); err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusBadRequest,
-			Status:  "bad request",
-			Message: "bad request",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusBadRequest, result)
-		return
-	}
-
-	newMerk, err := h.merkService.InsertMerk(&merk)
-	if err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusInternalServerError,
-			Status:  "status internal server error",
-			Message: "status internal server error",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-	result := web.WebResponse{
+	webResponse := web.WebResponse{
 		Code:    http.StatusCreated,
-		Status:  "success insert merk",
-		Message: "success insert merk",
-		Data:    newMerk,
+		Status:  "CREATED",
+		Message: "The data has been successfully added",
+		Data:    merkResponse,
 	}
-	ctx.JSON(http.StatusCreated, result)
+
+	context.JSON(http.StatusCreated, gin.H{"merk": webResponse})
+
 }
 
-// UpdateMerk implements MerkHandler
-func (h *merkHandler) UpdateMerk(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusBadRequest,
-			Status:  "bad request",
-			Message: "bad request",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusBadRequest, result)
-		return
-	}
-	var merk entity.Merk
-	merk.Id = id
+func (merkController *MerkControllerImpl) ViewAll(context *gin.Context) {
+	merkResponse, err := merkController.merkService.ViewAll()
+	helper.InternalServerError(err, context)
 
-	if err := ctx.ShouldBindJSON(&merk); err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusInternalServerError,
-			Status:  "status internal server error",
-			Message: "status internal server error",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-	merkUpdate, err := h.merkService.UpdateMerk(&merk)
-	if err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusInternalServerError,
-			Status:  "status internal server error",
-			Message: "status internal server error",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-	result := web.WebResponse{
+	web_response := web.WebResponse{
 		Code:    http.StatusOK,
-		Status:  "update success",
-		Message: "success update merk with id " + idParam,
-		Data:    merkUpdate,
+		Status:  "OK",
+		Message: "list of all merk data",
+		Data:    merkResponse,
 	}
-	ctx.JSON(http.StatusOK, result)
+	context.JSON(http.StatusOK, gin.H{"merk": web_response})
 }
 
-func NewMerkHandler(merkService merkservice.MerkService) MerkHandler {
-	return &merkHandler{merkService: merkService}
+func (merkController *MerkControllerImpl) ViewOne(context *gin.Context) {
+	merkId, _ := strconv.Atoi(context.Param("id"))
+	merkResponse, err := merkController.merkService.ViewOne(merkId)
+	helper.InternalServerError(err, context)
+
+	webResponses := web.WebResponse{
+		Code:    http.StatusOK,
+		Status:  "OK",
+		Message: "merk data by merk id",
+		Data:    merkResponse,
+	}
+	context.JSON(http.StatusOK, gin.H{"merk": webResponses})
+}
+
+func (merkController *MerkControllerImpl) Edit(context *gin.Context) {
+	var merk webmerk.MerkUpdateRequest
+	err := context.ShouldBindJSON(&merk)
+	helper.InternalServerError(err, context)
+
+	merkId, _ := strconv.Atoi(context.Param("id"))
+	merk.Id = merkId
+
+	merkResponse, err := merkController.merkService.Edit(merk)
+	helper.InternalServerError(err, context)
+
+	webResponse := web.WebResponse{
+		Code:    http.StatusCreated,
+		Status:  "CREATED",
+		Message: "the data has been updated",
+		Data:    merkResponse,
+	}
+	context.JSON(http.StatusCreated, gin.H{"merk": webResponse})
+}
+
+func (merkController *MerkControllerImpl) Unreg(context *gin.Context) {
+	merkId, _ := strconv.Atoi(context.Param("id"))
+	merkResponse, err := merkController.merkService.Unreg(merkId)
+	helper.InternalServerError(err, context)
+
+	webResponses := web.WebResponse{
+		Code:    http.StatusOK,
+		Status:  "OK",
+		Message: "merk data has been deleted",
+		Data:    merkResponse,
+	}
+	context.JSON(http.StatusOK, gin.H{"merk": webResponses})
 }

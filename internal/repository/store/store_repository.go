@@ -3,28 +3,30 @@ package storerepository
 import (
 	"database/sql"
 	"fmt"
-	entitybank "pancakaki/internal/domain/entity"
-	entitybankstore "pancakaki/internal/domain/entity/bank_store"
-	entitystore "pancakaki/internal/domain/entity/store"
+	"pancakaki/internal/domain/entity"
 	webstore "pancakaki/internal/domain/web/store"
-
-	// bankrepository "pancakaki/internal/repository/bank"
-	bankstorerepository "pancakaki/internal/repository/bank"
+	bankstorerepository "pancakaki/internal/repository/bank_store"
 )
 
 type StoreRepository interface {
-	GetStoreByOwnerId(id int) (*entitystore.Store, error)
-	GetStoreByName(name string) (*entitystore.Store, error)
-	CreateStore(newStore *entitystore.Store, tx *sql.Tx) (*entitystore.Store, error)
+	GetStoreByOwnerId(id int) (*entity.Store, error)
+	GetStoreByName(name string) (*entity.Store, error)
+	CreateStore(newStore *entity.Store, tx *sql.Tx) (*entity.Store, error)
 	CreateMainStore(newTransactionStore *webstore.StoreCreateRequest) (*webstore.StoreCreateResponse, error)
-	UpdateStore(updateStore *entitystore.Store, tx *sql.Tx) (*entitystore.Store, error)
+	UpdateStore(updateStore *entity.Store, tx *sql.Tx) (*entity.Store, error)
 	UpdateMainStore(newUpdateStore *webstore.StoreCreateRequest) (*webstore.StoreCreateResponse, error)
 }
 
 type storeRepository struct {
-	db *sql.DB
-	// repoBank      bankstorerepository.BankStoreRepository
-	repoBankStore bankstorerepository.BankStoreRepository
+	db                  *sql.DB
+	bankStoreRepository bankstorerepository.BankStoreRepository
+}
+
+func NewStoreRepository(db *sql.DB, bankStoreRepository bankstorerepository.BankStoreRepository) StoreRepository {
+	return &storeRepository{
+		db:                  db,
+		bankStoreRepository: bankStoreRepository,
+	}
 }
 
 func (repo *storeRepository) CreateMainStore(newTransactionStore *webstore.StoreCreateRequest) (*webstore.StoreCreateResponse, error) {
@@ -32,14 +34,14 @@ func (repo *storeRepository) CreateMainStore(newTransactionStore *webstore.Store
 	if err != nil {
 		panic(err)
 	}
-	newStore := entitystore.Store{
+	newStore := entity.Store{
 		Name:    newTransactionStore.Name,
 		NoHp:    newTransactionStore.NoHp,
 		Email:   newTransactionStore.Email,
 		Address: newTransactionStore.Address,
 		OwnerId: newTransactionStore.OwnerId,
 	}
-	newBank := entitybank.Bank{
+	newBank := entity.Bank{
 		Name:        newTransactionStore.BankName,
 		BankAccount: newTransactionStore.BankAccount,
 		AccountName: newTransactionStore.AccountName,
@@ -50,17 +52,17 @@ func (repo *storeRepository) CreateMainStore(newTransactionStore *webstore.Store
 		return nil, fmt.Errorf("failed to create store : %w", err)
 	}
 
-	bank, err := repo.repoBankStore.CreateBank(&newBank, tx)
+	bank, err := repo.bankStoreRepository.CreateBank(&newBank, tx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bank : %w", err)
 	}
 
-	newBankStore := entitybankstore.BankStore{
+	newBankStore := entity.BankStore{
 		StoreId: store.Id,
 		BankId:  bank.Id,
 	}
 
-	_, err = repo.repoBankStore.CreateBankStore(&newBankStore, tx)
+	_, err = repo.bankStoreRepository.CreateBankStore(&newBankStore, tx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bank store : %w", err)
 	}
@@ -82,7 +84,7 @@ func (repo *storeRepository) CreateMainStore(newTransactionStore *webstore.Store
 	return &storeRespose, nil
 }
 
-func (repo *storeRepository) CreateStore(newStore *entitystore.Store, tx *sql.Tx) (*entitystore.Store, error) {
+func (repo *storeRepository) CreateStore(newStore *entity.Store, tx *sql.Tx) (*entity.Store, error) {
 	stmt, err := repo.db.Prepare("INSERT INTO tbl_store (name, no_hp, email, address, owner_id) VALUES ($1,$2,$3,$4,$5) RETURNING id")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create store : %w", err)
@@ -107,8 +109,8 @@ func validate(err error, message string, tx *sql.Tx) {
 	}
 }
 
-func (repo *storeRepository) GetStoreByOwnerId(id int) (*entitystore.Store, error) {
-	var store entitystore.Store
+func (repo *storeRepository) GetStoreByOwnerId(id int) (*entity.Store, error) {
+	var store entity.Store
 	stmt, err := repo.db.Prepare("SELECT id, name,no_hp,email,address,owner_id FROM tbl_store WHERE owner_id = $1")
 	if err != nil {
 		return nil, err
@@ -125,8 +127,8 @@ func (repo *storeRepository) GetStoreByOwnerId(id int) (*entitystore.Store, erro
 	return &store, nil
 }
 
-func (repo *storeRepository) GetStoreByName(name string) (*entitystore.Store, error) {
-	var store entitystore.Store
+func (repo *storeRepository) GetStoreByName(name string) (*entity.Store, error) {
+	var store entity.Store
 	stmt, err := repo.db.Prepare("SELECT id, name,no_hp,email,address,owner_id FROM tbl_store WHERE name = $1")
 	if err != nil {
 		return nil, err
@@ -143,7 +145,7 @@ func (repo *storeRepository) GetStoreByName(name string) (*entitystore.Store, er
 	return &store, nil
 }
 
-func (repo *storeRepository) UpdateStore(updateStore *entitystore.Store, tx *sql.Tx) (*entitystore.Store, error) {
+func (repo *storeRepository) UpdateStore(updateStore *entity.Store, tx *sql.Tx) (*entity.Store, error) {
 	stmt, err := repo.db.Prepare("UPDATE tbl_store SET name = $1, no_hp=$2,email=$3,address=$4 WHERE id = $5")
 	if err != nil {
 		return nil, fmt.Errorf("failed to update store : %w", err)
@@ -164,14 +166,14 @@ func (repo *storeRepository) UpdateMainStore(newUpdateStore *webstore.StoreCreat
 	if err != nil {
 		panic(err)
 	}
-	updateStore := entitystore.Store{
+	updateStore := entity.Store{
 		Name:    newUpdateStore.Name,
 		NoHp:    newUpdateStore.NoHp,
 		Email:   newUpdateStore.Email,
 		Address: newUpdateStore.Address,
 		OwnerId: newUpdateStore.OwnerId,
 	}
-	updateBank := entitybank.Bank{
+	updateBank := entity.Bank{
 		Name:        newUpdateStore.BankName,
 		BankAccount: newUpdateStore.BankAccount,
 		AccountName: newUpdateStore.AccountName,
@@ -182,7 +184,7 @@ func (repo *storeRepository) UpdateMainStore(newUpdateStore *webstore.StoreCreat
 		return nil, fmt.Errorf("failed to update store : %w", err)
 	}
 
-	bank, err := repo.repoBankStore.UpdateBank(&updateBank, tx)
+	bank, err := repo.bankStoreRepository.UpdateBank(&updateBank, tx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update bank : %w", err)
 	}
@@ -202,15 +204,4 @@ func (repo *storeRepository) UpdateMainStore(newUpdateStore *webstore.StoreCreat
 	}
 
 	return &storeRespose, nil
-}
-
-func NewStoreRepository(
-	db *sql.DB,
-	// repoBank bankrepository.BankRepository,
-	repoBankStore bankstorerepository.BankStoreRepository,
-) StoreRepository {
-	return &storeRepository{
-		db: db,
-		// repoBank:      repoBank,
-		repoBankStore: repoBankStore}
 }

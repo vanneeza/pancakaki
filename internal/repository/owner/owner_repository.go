@@ -3,7 +3,7 @@ package ownerrepository
 import (
 	"database/sql"
 	"fmt"
-	entity "pancakaki/internal/domain/entity/owner"
+	"pancakaki/internal/domain/entity"
 )
 
 type OwnerRepository interface {

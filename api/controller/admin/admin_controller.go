@@ -19,4 +19,7 @@ type AdminController interface {
 
 	ViewAllOwner(context *gin.Context)
 	ViewOwnerByName(context *gin.Context)
+	UnregOwner(context *gin.Context)
+
+	ViewTransactionCustomerById(context *gin.Context)
 }

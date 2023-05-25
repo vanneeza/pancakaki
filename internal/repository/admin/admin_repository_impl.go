@@ -32,7 +32,7 @@ func (r *AdminRepositoryImpl) Create(admin *entity.Admin) (*entity.Admin, error)
 
 func (r *AdminRepositoryImpl) FindAll() ([]entity.Admin, error) {
 	var tbl_admin []entity.Admin
-	rows, err := r.Db.Query("SELECT id, username, password FROM tbl_admin")
+	rows, err := r.Db.Query("SELECT id, username, password FROM tbl_admin WHERE is_deleted = FALSE")
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (r *AdminRepositoryImpl) FindAll() ([]entity.Admin, error) {
 
 func (r *AdminRepositoryImpl) FindById(id int) (*entity.Admin, error) {
 	var admin entity.Admin
-	stmt, err := r.Db.Prepare("SELECT id, username, password FROM tbl_admin WHERE id = $1")
+	stmt, err := r.Db.Prepare("SELECT id, username, password FROM tbl_admin WHERE id = $1 AND is_deleted = FALSE")
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (r *AdminRepositoryImpl) Update(admin *entity.Admin) (*entity.Admin, error)
 }
 
 func (r *AdminRepositoryImpl) Delete(adminId int) error {
-	stmt, err := r.Db.Prepare("DELETE FROM tbl_admin WHERE id = $1")
+	stmt, err := r.Db.Prepare("Update tbl_admin SET is_deleted = TRUE WHERE id = $1")
 	if err != nil {
 		return err
 	}

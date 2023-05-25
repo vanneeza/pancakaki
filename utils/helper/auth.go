@@ -9,6 +9,7 @@ import (
 
 func AuthMiddleware(jwtKey string) gin.HandlerFunc {
 	var jwtKeyByte = []byte(jwtKey)
+
 	return func(ctx *gin.Context) {
 		tokenString := ctx.GetHeader("Authorization")
 

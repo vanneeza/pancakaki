@@ -1,15 +1,15 @@
 package storeservice
 
 import (
-	entitystore "pancakaki/internal/domain/entity/store"
+	"pancakaki/internal/domain/entity"
 	webstore "pancakaki/internal/domain/web/store"
 	storerepository "pancakaki/internal/repository/store"
 )
 
 type StoreService interface {
-	// CreateStore(newStore *entitystore.Store, tx *sql.Tx) (*entitystore.Store, error)
-	GetStoreByOwnerId(id int) (*entitystore.Store, error)
-	GetStoreByName(name string) (*entitystore.Store, error)
+	// CreateStore(newStore *entity.Store, tx *sql.Tx) (*entity.Store, error)
+	GetStoreByOwnerId(id int) (*entity.Store, error)
+	GetStoreByName(name string) (*entity.Store, error)
 	CreateMainStore(newTransactionStore *webstore.StoreCreateRequest) (*webstore.StoreCreateResponse, error)
 	UpdateMainStore(newUpdateStore *webstore.StoreCreateRequest) (*webstore.StoreCreateResponse, error)
 }
@@ -22,11 +22,11 @@ func (s *storeService) CreateMainStore(newTransactionStore *webstore.StoreCreate
 	return s.storeRepo.CreateMainStore(newTransactionStore)
 }
 
-func (s *storeService) GetStoreByOwnerId(id int) (*entitystore.Store, error) {
+func (s *storeService) GetStoreByOwnerId(id int) (*entity.Store, error) {
 	return s.storeRepo.GetStoreByOwnerId(id)
 }
 
-func (s *storeService) GetStoreByName(name string) (*entitystore.Store, error) {
+func (s *storeService) GetStoreByName(name string) (*entity.Store, error) {
 	return s.storeRepo.GetStoreByName(name)
 }
 

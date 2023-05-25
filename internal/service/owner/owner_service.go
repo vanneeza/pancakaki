@@ -1,7 +1,7 @@
 package ownerservice
 
 import (
-	entity "pancakaki/internal/domain/entity/owner"
+	"pancakaki/internal/domain/entity"
 	ownerrepository "pancakaki/internal/repository/owner"
 
 	"golang.org/x/crypto/bcrypt"

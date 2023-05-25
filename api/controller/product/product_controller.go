@@ -2,7 +2,7 @@ package productcontroller
 
 import (
 	"net/http"
-	entity "pancakaki/internal/domain/entity/product"
+	"pancakaki/internal/domain/entity"
 	"pancakaki/internal/domain/web"
 	ownerservice "pancakaki/internal/service/owner"
 	productservice "pancakaki/internal/service/product"

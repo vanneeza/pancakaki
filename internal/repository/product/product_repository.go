@@ -3,7 +3,7 @@ package productrepository
 import (
 	"database/sql"
 	"fmt"
-	entity "pancakaki/internal/domain/entity/product"
+	"pancakaki/internal/domain/entity"
 )
 
 type ProductRepository interface {

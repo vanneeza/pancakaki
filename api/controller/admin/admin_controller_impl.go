@@ -62,7 +62,7 @@ func (adminController *AdminControllerImpl) ViewOne(context *gin.Context) {
 	webResponses := web.WebResponse{
 		Code:    http.StatusOK,
 		Status:  "OK",
-		Message: "admin data by admin ID",
+		Message: "admin data by admin id",
 		Data:    adminResponse,
 	}
 	context.JSON(http.StatusOK, gin.H{"admin": webResponses})
@@ -82,7 +82,7 @@ func (adminController *AdminControllerImpl) Edit(context *gin.Context) {
 	webResponse := web.WebResponse{
 		Code:    http.StatusCreated,
 		Status:  "CREATED",
-		Message: "the data has been updated",
+		Message: "admin data has been updated",
 		Data:    adminResponse,
 	}
 	context.JSON(http.StatusCreated, gin.H{"admin": webResponse})
@@ -225,6 +225,34 @@ func (adminController *AdminControllerImpl) ViewOwnerByName(context *gin.Context
 		Code:    http.StatusOK,
 		Status:  "OK",
 		Message: "list of owner profile data by name",
+		Data:    transactionOwnerResponse,
+	}
+	context.JSON(http.StatusOK, gin.H{"admin/owner/profile": webResponses})
+}
+
+func (adminController *AdminControllerImpl) UnregOwner(context *gin.Context) {
+	idOwner, _ := strconv.Atoi(context.Param("id"))
+	transactionOwnerResponse, err := adminController.adminService.UnregOwner(idOwner)
+	helper.InternalServerError(err, context)
+
+	webResponses := web.WebResponse{
+		Code:    http.StatusOK,
+		Status:  "OK",
+		Message: "owner data has been deleted",
+		Data:    transactionOwnerResponse,
+	}
+	context.JSON(http.StatusOK, gin.H{"admin/owner/profile": webResponses})
+}
+
+func (adminController *AdminControllerImpl) ViewTransactionCustomerById(context *gin.Context) {
+	idCustomer, _ := strconv.Atoi(context.Param("id"))
+	transactionOwnerResponse, err := adminController.adminService.ViewTransactionCustomerById(idCustomer)
+	helper.InternalServerError(err, context)
+
+	webResponses := web.WebResponse{
+		Code:    http.StatusOK,
+		Status:  "OK",
+		Message: "list of transaction customer by id",
 		Data:    transactionOwnerResponse,
 	}
 	context.JSON(http.StatusOK, gin.H{"admin/owner/profile": webResponses})

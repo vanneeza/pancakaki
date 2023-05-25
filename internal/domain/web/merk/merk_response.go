@@ -1,6 +1,6 @@
 package webmerk
 
-type MerkRespose struct {
-	Id   int
-	Name string
+type MerkResponse struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
 }

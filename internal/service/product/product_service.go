@@ -1,7 +1,7 @@
 package productservice
 
 import (
-	entity "pancakaki/internal/domain/entity/product"
+	"pancakaki/internal/domain/entity"
 	productrepository "pancakaki/internal/repository/product"
 )
 

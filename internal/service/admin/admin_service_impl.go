@@ -6,20 +6,28 @@ import (
 	"pancakaki/internal/domain/entity"
 	webadmin "pancakaki/internal/domain/web/admin"
 	webbank "pancakaki/internal/domain/web/bank"
+	webcustomer "pancakaki/internal/domain/web/customer"
+	webowner "pancakaki/internal/domain/web/owner"
 	adminrepository "pancakaki/internal/repository/admin"
 	bankrepository "pancakaki/internal/repository/bank"
+	customerrepository "pancakaki/internal/repository/customer"
+	ownerrepository "pancakaki/internal/repository/owner"
 	"pancakaki/utils/helper"
 )
 
 type AdminServiceImpl struct {
-	AdminRepository adminrepository.AdminRepository
-	BankRepository  bankrepository.BankRepository
+	AdminRepository    adminrepository.AdminRepository
+	BankRepository     bankrepository.BankRepository
+	OwnerRepository    ownerrepository.OwnerRepository
+	CustomerRepository customerrepository.CustomerRepository
 }
 
-func NewAdminService(adminRepository adminrepository.AdminRepository, bankRepository bankrepository.BankRepository) AdminService {
+func NewAdminService(adminRepository adminrepository.AdminRepository, bankRepository bankrepository.BankRepository, ownerRepository ownerrepository.OwnerRepository, customerRepository customerrepository.CustomerRepository) AdminService {
 	return &AdminServiceImpl{
-		AdminRepository: adminRepository,
-		BankRepository:  bankRepository,
+		AdminRepository:    adminRepository,
+		BankRepository:     bankRepository,
+		OwnerRepository:    ownerRepository,
+		CustomerRepository: customerRepository,
 	}
 }
 
@@ -260,4 +268,42 @@ func (adminService *AdminServiceImpl) ViewOwnerByName(ownerName string) (webadmi
 	}
 
 	return ownerResponse, nil
+}
+
+func (adminService *AdminServiceImpl) UnregOwner(ownerId int) (webowner.OwnerResponse, error) {
+	ownerData, err := adminService.OwnerRepository.GetOwnerById(ownerId)
+	helper.PanicErr(err)
+	err = adminService.OwnerRepository.DeleteOwner(ownerId)
+	helper.PanicErr(err)
+
+	ownerResponse := webowner.OwnerResponse{
+		Id:           ownerData.Id,
+		Name:         ownerData.Name,
+		NoHp:         ownerData.NoHp,
+		Email:        ownerData.Email,
+		Password:     ownerData.Password,
+		MembershipId: ownerData.MembershipId,
+	}
+	return ownerResponse, nil
+}
+
+func (adminService *AdminServiceImpl) ViewTransactionCustomerById(customerId int) ([]webcustomer.TransactionCustomer, error) {
+	transactionCustomer, err := adminService.CustomerRepository.FindTransactionCustomerById(customerId)
+	helper.PanicErr(err)
+
+	transactionCustomerResponse := make([]webcustomer.TransactionCustomer, len(transactionCustomer))
+	for i, txCustomer := range transactionCustomer {
+		transactionCustomerResponse[i] = webcustomer.TransactionCustomer{
+			OwnerName:    txCustomer.OwnerName,
+			ProductName:  txCustomer.NameProduct,
+			MerkName:     txCustomer.NameMerk,
+			Price:        txCustomer.Price,
+			Qty:          txCustomer.Qty,
+			BuyDate:      txCustomer.BuyDate,
+			TotalPrice:   txCustomer.TotalPrice,
+			Status:       txCustomer.Status,
+			CustomerName: txCustomer.CustomerName,
+		}
+	}
+	return transactionCustomerResponse, nil
 }
