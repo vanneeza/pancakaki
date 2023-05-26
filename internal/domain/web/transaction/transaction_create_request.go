@@ -1,6 +1,9 @@
 package webtransaction
 
-import "time"
+import (
+	"mime/multipart"
+	"time"
+)
 
 type TransactionOrderDetailCreateRequest struct {
 	BuyDate    time.Time `json:"buy_date"`
@@ -14,4 +17,11 @@ type TransactionOrderCreateRequest struct {
 	CustomerId int `json:"customer_id"`
 	ProductId  int `json:"product_id"`
 	Qty        int `json:"qty"`
+}
+
+type PaymentCreateRequest struct {
+	Transaction_detail_order_Id int                   `form:"transaction_detail_order_id"`
+	VirtualAccount              int                   `form:"virtual_account"`
+	Pay                         int                   `form:"pay"`
+	Photo                       *multipart.FileHeader `form:"photo"`
 }

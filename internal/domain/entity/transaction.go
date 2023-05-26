@@ -3,12 +3,13 @@ package entity
 import "time"
 
 type TransactionOrderDetail struct {
-	Id         int
-	BuyDate    time.Time
-	Status     string
-	TotalPrice int64
-	Photo      string
-	Tax        float64
+	Id             int
+	BuyDate        time.Time
+	Status         string
+	TotalPrice     int
+	Photo          string
+	Tax            float64
+	VirtualAccount int64
 }
 
 type TransactionOrder struct {
@@ -18,4 +19,10 @@ type TransactionOrder struct {
 	CustomerId    int
 	ProductId     int
 	DetailOrderId int
+}
+
+type Payment struct {
+	Id                       int
+	TransactionDetailOrderId int
+	Pay                      float64
 }

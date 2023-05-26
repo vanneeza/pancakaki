@@ -12,13 +12,16 @@ type Customer struct {
 }
 
 type TransactionCustomer struct {
-	NameProduct  string
-	NameMerk     string
-	Price        float64
-	Qty          int
-	BuyDate      time.Time
-	TotalPrice   int64
-	Status       string
-	CustomerName string
-	OwnerName    string
+	CustomerName   string
+	MerkName       string
+	ProductName    string
+	ProductPrice   int
+	ShippingCost   int
+	Qty            int
+	Tax            float64
+	TotalPrice     int
+	BuyDate        time.Time
+	Status         string
+	StoreName      string
+	VirtualAccount int
 }

@@ -3,6 +3,7 @@ package productrepository
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"pancakaki/internal/domain/entity"
 )
 
@@ -65,8 +66,22 @@ func (repo *productRepository) FindProductById(id int) (*entity.Product, error) 
 		return nil, err
 	}
 	defer stmt.Close()
-
+	s := fmt.Sprintf("SELECT id,name,price,stock,description,shipping_cost,merk_id,store_id FROM tbl_product WHERE id = %d", id)
+	log.Println(s)
+	fmt.Scanln()
 	err = stmt.QueryRow(id).Scan(&product.Id, &product.Name, &product.Price, &product.Stock, &product.Description, &product.ShippingCost, &product.MerkId, &product.StoreId)
+
+	fmt.Printf("product.Id: %v\n", product.Id)
+	fmt.Printf("product.Name: %v\n", product.Name)
+	fmt.Printf("product.Price: %v\n", product.Price)
+	fmt.Printf("product.Stock: %v\n", product.Stock)
+	fmt.Printf("product.Description: %v\n", product.Description)
+	fmt.Printf("product.ShippingCost: %v\n", product.ShippingCost)
+	fmt.Printf("product.MerkId: %v\n", product.MerkId)
+	fmt.Printf("product.StoreId: %v\n", product.StoreId)
+
+	fmt.Scanln()
+
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("product with id %d not found", id)
 	} else if err != nil {

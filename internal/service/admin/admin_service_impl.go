@@ -288,21 +288,24 @@ func (adminService *AdminServiceImpl) UnregOwner(ownerId int) (webowner.OwnerRes
 }
 
 func (adminService *AdminServiceImpl) ViewTransactionCustomerById(customerId int) ([]webcustomer.TransactionCustomer, error) {
-	transactionCustomer, err := adminService.CustomerRepository.FindTransactionCustomerById(customerId)
+	transactionCustomer, err := adminService.CustomerRepository.FindTransactionCustomerById(customerId, 0)
 	helper.PanicErr(err)
 
 	transactionCustomerResponse := make([]webcustomer.TransactionCustomer, len(transactionCustomer))
 	for i, txCustomer := range transactionCustomer {
 		transactionCustomerResponse[i] = webcustomer.TransactionCustomer{
-			OwnerName:    txCustomer.OwnerName,
-			ProductName:  txCustomer.NameProduct,
-			MerkName:     txCustomer.NameMerk,
-			Price:        txCustomer.Price,
-			Qty:          txCustomer.Qty,
-			BuyDate:      txCustomer.BuyDate,
-			TotalPrice:   txCustomer.TotalPrice,
-			Status:       txCustomer.Status,
-			CustomerName: txCustomer.CustomerName,
+			CustomerName:   txCustomer.CustomerName,
+			MerkName:       txCustomer.MerkName,
+			ProductName:    txCustomer.ProductName,
+			ProductPrice:   txCustomer.ProductPrice,
+			ShippingCost:   txCustomer.ShippingCost,
+			Qty:            txCustomer.Qty,
+			Tax:            txCustomer.Tax,
+			TotalPrice:     txCustomer.TotalPrice,
+			BuyDate:        txCustomer.BuyDate.Format("2006-01-02"),
+			Status:         txCustomer.Status,
+			StoreName:      txCustomer.StoreName,
+			VirtualAccount: txCustomer.VirtualAccount,
 		}
 	}
 	return transactionCustomerResponse, nil

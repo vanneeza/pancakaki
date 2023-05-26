@@ -85,7 +85,7 @@ func Run(db *sql.DB) *gin.Engine {
 	adminController := admincontroller.NewAdminController(adminService)
 
 	transactionRepositoryCha := transactionrepository.NewTransactionRepository(db)
-	transactionServiceCHa := transactionservice.NewTransactionService(transactionRepositoryCha)
+	transactionServiceCHa := transactionservice.NewTransactionService(transactionRepositoryCha, productRepository, customerRepository, ownerRepository)
 	transactionController := transactioncontroller.NewTransactionController(transactionServiceCHa)
 
 	var jwtKey = "secret_key"
@@ -186,10 +186,12 @@ func Run(db *sql.DB) *gin.Engine {
 		customer.PUT("/:id", customerController.Edit)
 		customer.DELETE("/:name", customerController.Unreg)
 
+		//------------ TRANSACTION CUSTOMER LANGSUNG BELI --------------------//
 		customer.POST("/transaction", transactionController.MakeOrder)
+		customer.POST("/payment/:id", transactionController.CustomerPayment)
 
-		////------------------- TEST PAYMENT --------------//
-		customer.POST("/payment", transactionController.CreatePaymentIntent)
+		////------------------- TEST PAYMENTGATEWAY : PROSESS --------------//
+		// customer.POST("/payment", transactionController.CreatePaymentIntent)
 	}
 	return r
 }

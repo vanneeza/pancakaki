@@ -11,6 +11,7 @@ type OwnerRepository interface {
 	GetOwnerByName(name string) (*entity.Owner, error)
 	GetOwnerById(id int) (*entity.Owner, error)
 	GetOwnerByEmail(email string) (*entity.Owner, error)
+	GetTaxAndStoreOwner(productId int) (string, float64, error)
 	UpdateOwner(updateOwner *entity.Owner) (*entity.Owner, error)
 	DeleteOwner(id int) error
 }
@@ -116,6 +117,27 @@ func (repo *ownerRepository) DeleteOwner(id int) error {
 	}
 
 	return nil
+}
+func (repo *ownerRepository) GetTaxAndStoreOwner(productId int) (string, float64, error) {
+	var storeName string
+	var tax float64
+	stmt, err := repo.db.Prepare(`SELECT tbl_store.Name, tbl_membership.Tax FROM tbl_membership
+	INNER JOIN tbl_owner on tbl_membership.id = tbl_owner.membership_id
+	INNER JOIN tbl_store ON tbl_owner.id = tbl_store.owner_id
+	INNER JOIN tbl_product ON tbl_store.id = tbl_product.store_id WHERE tbl_product.id = $1`)
+	if err != nil {
+		return storeName, tax, err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(productId).Scan(&storeName, &tax)
+	if err == sql.ErrNoRows {
+		return "", 0, fmt.Errorf("product with id %d not found", productId)
+	} else if err != nil {
+		return "", 0, err
+	}
+
+	return storeName, tax, nil
 }
 
 func NewOwnerRepository(db *sql.DB) OwnerRepository {
