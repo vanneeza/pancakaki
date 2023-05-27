@@ -2,6 +2,7 @@ package customerrepository
 
 import (
 	"database/sql"
+	"fmt"
 	"pancakaki/internal/domain/entity"
 	"pancakaki/utils/helper"
 )
@@ -116,8 +117,11 @@ func (r *CustomerRepositoryImpl) Delete(customerId int) error {
 }
 
 func (r *CustomerRepositoryImpl) FindTransactionCustomerById(customerId, virtualAccount int) ([]entity.TransactionCustomer, error) {
+	fmt.Printf("customerId: %v\n", customerId)
+	fmt.Printf("virtualAccount: %v\n", virtualAccount)
+	fmt.Scanln()
 	var customers []entity.TransactionCustomer
-	rows, err := r.Db.Query(`SELECT tbl_customer.name, tbl_merk.name, tbl_product.name, tbl_product.price, tbl_product.shipping_cost,
+	rows, err := r.Db.Query(`SELECT tbl_customer.name, tbl_merk.name, tbl_product.id, tbl_product.name, tbl_product.price, tbl_product.shipping_cost,
 	tbl_transaction_order.quantity, tbl_transaction_detail_order.tax, tbl_transaction_detail_order.total_price,
 	tbl_transaction_detail_order.buy_date, tbl_transaction_detail_order.status,tbl_store.name, tbl_transaction_detail_order.virtual_account
 	FROM tbl_transaction_detail_order
@@ -134,6 +138,7 @@ func (r *CustomerRepositoryImpl) FindTransactionCustomerById(customerId, virtual
 		var customer entity.TransactionCustomer
 		err := rows.Scan(&customer.CustomerName,
 			&customer.MerkName,
+			&customer.ProductId,
 			&customer.ProductName,
 			&customer.ProductPrice,
 			&customer.ShippingCost,

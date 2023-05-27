@@ -14,6 +14,7 @@ type ProductRepository interface {
 	FindProductById(id int) (*entity.Product, error)
 	FindProductByName(name string) (*entity.Product, error)
 	FindAllProduct() ([]entity.Product, error)
+	UpdateProductStock(updateProduct *entity.Product) (*entity.Product, error)
 }
 
 type productRepository struct {
@@ -138,6 +139,22 @@ func (repo *productRepository) UpdateProduct(updateProduct *entity.Product) (*en
 
 	// updateAt := time.Now()
 	_, err = stmt.Exec(updateProduct.Id, updateProduct.Name, updateProduct.Price, updateProduct.Stock, updateProduct.Description, updateProduct.ShippingCost, updateProduct.MerkId, updateProduct.StoreId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update product : %w", err)
+	}
+
+	return updateProduct, nil
+}
+
+func (repo *productRepository) UpdateProductStock(updateProduct *entity.Product) (*entity.Product, error) {
+	stmt, err := repo.db.Prepare("UPDATE tbl_product SET stock=$1 WHERE id = $2")
+	if err != nil {
+		return nil, fmt.Errorf("failed to update product stock : %w", err)
+	}
+	defer stmt.Close()
+
+	// updateAt := time.Now()
+	_, err = stmt.Exec(updateProduct.Stock, updateProduct.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update product : %w", err)
 	}

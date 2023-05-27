@@ -111,7 +111,8 @@ func (transactionService *TransactionServiceImpl) CustomerPayment(req webtransac
 		Photo:  req.Photo.Filename,
 	}
 
-	var totalPrice, virtualAccount int
+	var virtualAccount, qty, productId int
+	var totalPrice float64
 
 	txCustomerData, _ := transactionService.CustomerRepository.FindTransactionCustomerById(0, req.VirtualAccount)
 
@@ -120,6 +121,7 @@ func (transactionService *TransactionServiceImpl) CustomerPayment(req webtransac
 		transactionCustomerResponse[i] = webcustomer.TransactionCustomer{
 			CustomerName:   txCustomer.CustomerName,
 			MerkName:       txCustomer.MerkName,
+			ProductId:      txCustomer.ProductId,
 			ProductName:    txCustomer.ProductName,
 			ProductPrice:   txCustomer.ProductPrice,
 			ShippingCost:   txCustomer.ShippingCost,
@@ -134,9 +136,17 @@ func (transactionService *TransactionServiceImpl) CustomerPayment(req webtransac
 		}
 		totalPrice = txCustomer.TotalPrice
 		virtualAccount = txCustomer.VirtualAccount
+		qty = txCustomer.Qty
+		productId = txCustomer.ProductId
 	}
 
-	if totalPrice < req.Pay {
+	fmt.Printf("txCustomerData: %v\n", txCustomerData)
+
+	fmt.Printf("productId: %v\n", productId)
+	fmt.Printf("virtualAccount: %v\n", virtualAccount)
+	fmt.Printf("req.VirtualAccount: %v\n", req.VirtualAccount)
+	fmt.Scanln()
+	if float64(req.Pay) < totalPrice {
 		return []webcustomer.TransactionCustomer{}, fmt.Errorf("uang kurang")
 	}
 
@@ -146,6 +156,19 @@ func (transactionService *TransactionServiceImpl) CustomerPayment(req webtransac
 
 	transactionService.TransactionRepository.CustomerPayment(&pay)
 	transactionService.TransactionRepository.UpdatePhotoAndStatus(&txDetail)
+
+	product, _ := transactionService.ProductRepository.FindProductById(productId)
+	// Update Stock ( - qty )
+
+	productStock := product.Stock - int16(qty)
+	stock := entity.Product{
+		Id:    productId,
+		Stock: productStock,
+	}
+	fmt.Printf("stock: %v\n", stock)
+
+	p, _ := transactionService.ProductRepository.UpdateProductStock(&stock)
+	fmt.Printf("p: %v\n", p)
 
 	return transactionCustomerResponse, nil
 }
