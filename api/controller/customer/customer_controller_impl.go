@@ -102,3 +102,16 @@ func (customerController *CustomerControllerImpl) Unreg(context *gin.Context) {
 	}
 	context.JSON(http.StatusOK, gin.H{"customer": webResponses})
 }
+func (customerController *CustomerControllerImpl) Notification(context *gin.Context) {
+	customerId, _ := strconv.Atoi(context.Param("id"))
+	customerResponse, err := customerController.customerService.Notification(customerId)
+	helper.InternalServerError(err, context)
+
+	webResponses := web.WebResponse{
+		Code:    http.StatusOK,
+		Status:  "OK",
+		Message: "list of notification customer by ID",
+		Data:    customerResponse,
+	}
+	context.JSON(http.StatusOK, gin.H{"customer/notification": webResponses})
+}

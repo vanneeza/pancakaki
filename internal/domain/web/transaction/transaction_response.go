@@ -16,10 +16,11 @@ type TransactionResponse struct {
 }
 
 type ProductResponse struct {
-	MerkName     string `json:"merk_name"`
-	ProductName  string `json:"product_name"`
-	ProductPrice int    `json:"product_price"`
-	Qty          int    `json:"quantity"`
+	MerkName     string  `json:"merk_name"`
+	ProductName  string  `json:"product_name"`
+	ProductPrice int     `json:"product_price"`
+	Qty          int     `json:"quantity"`
+	Total        float64 `json:"total"`
 }
 
 type TransactionMultiplerResponse struct {

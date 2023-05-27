@@ -204,6 +204,9 @@ func Run(db *sql.DB) *gin.Engine {
 		customer.GET("/chart/:id", chartController.ViewOne)
 		customer.PUT("/chart/:id", chartController.Edit)
 		customer.DELETE("/chart/:id", chartController.Unreg)
+
+		//------- NOTIFICATION ------
+		customer.GET("/notification/:id", customerController.Notification)
 		////------------------- TEST PAYMENTGATEWAY : PROSESS --------------//
 		// customer.POST("/payment", transactionController.CreatePaymentIntent)
 	}

@@ -5,6 +5,7 @@ import (
 	"log"
 	"pancakaki/internal/domain/entity"
 	webcustomer "pancakaki/internal/domain/web/customer"
+	webtransaction "pancakaki/internal/domain/web/transaction"
 	customerrepository "pancakaki/internal/repository/customer"
 	"pancakaki/utils/helper"
 )
@@ -114,5 +115,72 @@ func (customerService *CustomerServiceImpl) Unreg(customerName string) (webcusto
 		Password: customerData.Password,
 	}
 
+	return customerResponse, nil
+}
+func (customerService *CustomerServiceImpl) Notification(customerId int) ([]webtransaction.TransactionResponse, error) {
+	tc, _ := customerService.CustomerRepository.FindTransactionCustomerById(customerId, 0)
+
+	customerResponse := make([]webtransaction.TransactionResponse, len(tc))
+	for i, customer := range tc {
+		customerResponse[i] = webtransaction.TransactionResponse{
+			CustomerName:   customer.CustomerName,
+			MerkName:       customer.MerkName,
+			ProductName:    customer.ProductName,
+			ProductPrice:   customer.ProductPrice,
+			ShippingCost:   customer.ShippingCost,
+			Qty:            customer.Qty,
+			Tax:            customer.Tax,
+			TotalPrice:     int(customer.TotalPrice),
+			BuyDate:        customer.BuyDate.Format("2006-01-02"),
+			Status:         customer.Status,
+			StoreName:      customer.StoreName,
+			VirtualAccount: customer.VirtualAccount,
+		}
+	}
+
+	// tc, _ := customerService.CustomerRepository.FindTransactionCustomerById(customerId, 0)
+
+	// // Map untuk mengumpulkan transaksi berdasarkan virtual account
+	// transactionMap := make(map[int][]webtransaction.ProductResponse)
+	// totalPrice := 0
+
+	// for _, customer := range tc {
+	// 	product := webtransaction.ProductResponse{
+	// 		MerkName:     customer.MerkName,
+	// 		ProductName:  customer.ProductName,
+	// 		ProductPrice: customer.ProductPrice,
+	// 		Qty:          customer.Qty,
+	// 		Total:        float64(customer.ProductPrice * customer.Qty),
+	// 	}
+
+	// 	transactionMap[customer.VirtualAccount] = append(transactionMap[customer.VirtualAccount], product)
+	// 	totalPrice += customer.ProductPrice * customer.Qty
+	// }
+
+	// // Buat slice untuk menyimpan hasil akhir
+	// customerResponse := []webtransaction.TransactionMultiplerResponse{}
+	// total_price := float64(totalPrice) + float64(tc[0].ShippingCost) + float64(tc[0].Tax)
+
+	// // Iterasi melalui map dan tambahkan transaksi ke customerResponse
+	// for virtualAccount, products := range transactionMap {
+	// 	transactionResponse := webtransaction.TransactionMultiplerResponse{
+	// 		CustomerName:   tc[0].CustomerName,
+	// 		Product:        products,
+	// 		ShippingCost:   tc[0].ShippingCost,
+	// 		Tax:            tc[0].Tax,
+	// 		TotalPrice:     int(total_price),
+	// 		BuyDate:        tc[0].BuyDate.Format("2006-01-02"),
+	// 		Status:         tc[0].Status,
+	// 		StoreName:      tc[0].StoreName,
+	// 		VirtualAccount: virtualAccount,
+	// 	}
+
+	// 	customerResponse = append(customerResponse, transactionResponse)
+	// }
+
+	// // Update total_price pada setiap transaksi di customerResponse
+	// for i := range customerResponse {
+	// 	customerResponse[i].TotalPrice = int(total_price)
+	// }
 	return customerResponse, nil
 }

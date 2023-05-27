@@ -8,4 +8,5 @@ type CustomerController interface {
 	ViewOne(context *gin.Context)
 	Edit(context *gin.Context)
 	Unreg(context *gin.Context)
+	Notification(context *gin.Context)
 }

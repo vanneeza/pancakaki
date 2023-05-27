@@ -2,6 +2,7 @@ package customerservice
 
 import (
 	webcustomer "pancakaki/internal/domain/web/customer"
+	webtransaction "pancakaki/internal/domain/web/transaction"
 )
 
 type CustomerService interface {
@@ -10,4 +11,5 @@ type CustomerService interface {
 	ViewOne(customerName string) (webcustomer.CustomerResponse, error)
 	Edit(req webcustomer.CustomerUpdateRequest) (webcustomer.CustomerResponse, error)
 	Unreg(customerName string) (webcustomer.CustomerResponse, error)
+	Notification(customerId int) ([]webtransaction.TransactionResponse, error)
 }

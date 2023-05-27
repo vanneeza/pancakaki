@@ -129,7 +129,9 @@ func (r *CustomerRepositoryImpl) FindTransactionCustomerById(customerId, virtual
 	INNER JOIN tbl_customer ON tbl_transaction_order.customer_id = tbl_customer.id
 	INNER JOIN tbl_product ON tbl_transaction_order.product_id = tbl_product.id
 	INNER JOIN tbl_store ON tbl_product.store_id = tbl_store.id
-	INNER JOIN tbl_merk ON tbl_product.merk_id = tbl_merk.id WHERE tbl_customer.id = $1 OR tbl_transaction_detail_order.virtual_account = $2`, customerId, virtualAccount)
+	INNER JOIN tbl_merk ON tbl_product.merk_id = tbl_merk.id
+	WHERE tbl_customer.id = $1 OR tbl_transaction_detail_order.virtual_account = $2
+	ORDER BY tbl_transaction_detail_order.status, tbl_transaction_detail_order.virtual_account ASC;`, customerId, virtualAccount)
 	helper.PanicErr(err)
 
 	defer rows.Close()
