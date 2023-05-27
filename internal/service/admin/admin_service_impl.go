@@ -6,7 +6,6 @@ import (
 	"pancakaki/internal/domain/entity"
 	webadmin "pancakaki/internal/domain/web/admin"
 	webbank "pancakaki/internal/domain/web/bank"
-	webcustomer "pancakaki/internal/domain/web/customer"
 	webowner "pancakaki/internal/domain/web/owner"
 	adminrepository "pancakaki/internal/repository/admin"
 	bankrepository "pancakaki/internal/repository/bank"
@@ -287,26 +286,26 @@ func (adminService *AdminServiceImpl) UnregOwner(ownerId int) (webowner.OwnerRes
 	return ownerResponse, nil
 }
 
-func (adminService *AdminServiceImpl) ViewTransactionCustomerById(customerId int) ([]webcustomer.TransactionCustomer, error) {
-	transactionCustomer, err := adminService.CustomerRepository.FindTransactionCustomerById(customerId, 0)
-	helper.PanicErr(err)
+// func (adminService *AdminServiceImpl) ViewTransactionCustomerById(customerId int) ([]webcustomer.TransactionCustomer, error) {
+// 	transactionCustomer, err := adminService.CustomerRepository.FindTransactionCustomerById(customerId, 0)
+// 	helper.PanicErr(err)
 
-	transactionCustomerResponse := make([]webcustomer.TransactionCustomer, len(transactionCustomer))
-	for i, txCustomer := range transactionCustomer {
-		transactionCustomerResponse[i] = webcustomer.TransactionCustomer{
-			CustomerName:   txCustomer.CustomerName,
-			MerkName:       txCustomer.MerkName,
-			ProductName:    txCustomer.ProductName,
-			ProductPrice:   txCustomer.ProductPrice,
-			ShippingCost:   txCustomer.ShippingCost,
-			Qty:            txCustomer.Qty,
-			Tax:            txCustomer.Tax,
-			TotalPrice:     txCustomer.TotalPrice,
-			BuyDate:        txCustomer.BuyDate.Format("2006-01-02"),
-			Status:         txCustomer.Status,
-			StoreName:      txCustomer.StoreName,
-			VirtualAccount: txCustomer.VirtualAccount,
-		}
-	}
-	return transactionCustomerResponse, nil
-}
+// 	transactionCustomerResponse := make([]webcustomer.TransactionCustomer, len(transactionCustomer))
+// 	for i, txCustomer := range transactionCustomer {
+// 		transactionCustomerResponse[i] = webcustomer.TransactionCustomer{
+// 			CustomerName:   txCustomer.CustomerName,
+// 			MerkName:       txCustomer.MerkName,
+// 			ProductName:    txCustomer.ProductName,
+// 			ProductPrice:   txCustomer.ProductPrice,
+// 			ShippingCost:   txCustomer.ShippingCost,
+// 			Qty:            txCustomer.Qty,
+// 			Tax:            txCustomer.Tax,
+// 			TotalPrice:     txCustomer.TotalPrice,
+// 			BuyDate:        txCustomer.BuyDate.Format("2006-01-02"),
+// 			Status:         txCustomer.Status,
+// 			StoreName:      txCustomer.StoreName,
+// 			VirtualAccount: txCustomer.VirtualAccount,
+// 		}
+// 	}
+// 	return transactionCustomerResponse, nil
+// }

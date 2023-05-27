@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	admincontroller "pancakaki/api/controller/admin"
+	chartcontroller "pancakaki/api/controller/chart"
 	customercontroller "pancakaki/api/controller/customer"
 	membershipcontroller "pancakaki/api/controller/membership"
 	merkcontroller "pancakaki/api/controller/merk"
@@ -14,6 +15,7 @@ import (
 	adminrepository "pancakaki/internal/repository/admin"
 	bankrepository "pancakaki/internal/repository/bank"
 	bankstorerepository "pancakaki/internal/repository/bank_store"
+	chartrepository "pancakaki/internal/repository/chart"
 	customerrepository "pancakaki/internal/repository/customer"
 	membershiprepository "pancakaki/internal/repository/membership"
 	merkrepository "pancakaki/internal/repository/merk"
@@ -24,6 +26,7 @@ import (
 	transactionrepository "pancakaki/internal/repository/transaction"
 	adminservice "pancakaki/internal/service/admin"
 	bankservice "pancakaki/internal/service/bank"
+	chartservice "pancakaki/internal/service/chart"
 	customerservice "pancakaki/internal/service/customer"
 	membershipservice "pancakaki/internal/service/membership"
 	merkservice "pancakaki/internal/service/merk"
@@ -73,9 +76,6 @@ func Run(db *sql.DB) *gin.Engine {
 	customerRepository := customerrepository.NewCustomerRepository(db)
 	bankRepoCha := bankrepository.NewBankRepository(db)
 
-	customerService := customerservice.NewCustomerService(customerRepository)
-	customerController := customercontroller.NewCustomerController(customerService)
-
 	membershipRepositoryCha := membershiprepository.NewMembershipRepository(db)
 	membershipServiceCHa := membershipservice.NewMembershipService(membershipRepositoryCha)
 	membershipController := membershipcontroller.NewMembershipController(membershipServiceCHa)
@@ -84,8 +84,15 @@ func Run(db *sql.DB) *gin.Engine {
 	adminService := adminservice.NewAdminService(adminRepository, bankRepoCha, ownerRepository, customerRepository)
 	adminController := admincontroller.NewAdminController(adminService)
 
+	customerService := customerservice.NewCustomerService(customerRepository)
+	customerController := customercontroller.NewCustomerController(customerService)
+
+	chartRepository := chartrepository.NewChartRepository(db)
+	chartService := chartservice.NewChartService(chartRepository, productRepository)
+	chartController := chartcontroller.NewChartController(chartService)
+
 	transactionRepositoryCha := transactionrepository.NewTransactionRepository(db)
-	transactionServiceCHa := transactionservice.NewTransactionService(transactionRepositoryCha, productRepository, customerRepository, ownerRepository)
+	transactionServiceCHa := transactionservice.NewTransactionService(transactionRepositoryCha, productRepository, customerRepository, ownerRepository, chartRepository)
 	transactionController := transactioncontroller.NewTransactionController(transactionServiceCHa)
 
 	var jwtKey = "secret_key"
@@ -115,7 +122,7 @@ func Run(db *sql.DB) *gin.Engine {
 
 		admin.GET("/transaction_history/owners", adminController.ViewTransactionAllOwner)
 		admin.GET("/transaction_history/owner/:name", adminController.ViewTransactionOwnerByName)
-		admin.GET("/transaction_history/customer/:id", adminController.ViewTransactionCustomerById)
+		// admin.GET("/transaction_history/customer/:id", adminController.ViewTransactionCustomerById)
 
 		admin.GET("/owner/profiles/", adminController.ViewAllOwner)
 		admin.DELETE("/owner/profile/:id", adminController.UnregOwner)
@@ -188,10 +195,18 @@ func Run(db *sql.DB) *gin.Engine {
 
 		//------------ TRANSACTION CUSTOMER LANGSUNG BELI --------------------//
 		customer.POST("/transaction", transactionController.MakeOrder)
+		customer.POST("/transactions", transactionController.MakeMultipleOrder)
 		customer.POST("/payment/:id", transactionController.CustomerPayment)
 
+		//---------- Customer Chart ------------------- //
+		customer.POST("/chart/", chartController.Register)
+		customer.GET("/charts/:id", chartController.ViewAll)
+		customer.GET("/chart/:id", chartController.ViewOne)
+		customer.PUT("/chart/:id", chartController.Edit)
+		customer.DELETE("/chart/:id", chartController.Unreg)
 		////------------------- TEST PAYMENTGATEWAY : PROSESS --------------//
 		// customer.POST("/payment", transactionController.CreatePaymentIntent)
 	}
+
 	return r
 }

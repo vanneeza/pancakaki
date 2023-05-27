@@ -2,9 +2,10 @@ package transactionservice
 
 import (
 	"fmt"
+	"log"
 	"pancakaki/internal/domain/entity"
-	webcustomer "pancakaki/internal/domain/web/customer"
 	webtransaction "pancakaki/internal/domain/web/transaction"
+	chartrepository "pancakaki/internal/repository/chart"
 	customerrepository "pancakaki/internal/repository/customer"
 	ownerrepository "pancakaki/internal/repository/owner"
 	productrepository "pancakaki/internal/repository/product"
@@ -18,16 +19,18 @@ type TransactionServiceImpl struct {
 	ProductRepository     productrepository.ProductRepository
 	CustomerRepository    customerrepository.CustomerRepository
 	Ownerrepository       ownerrepository.OwnerRepository
+	ChartRepository       chartrepository.ChartRepository
 }
 
 func NewTransactionService(transactionRepository transactionrepository.TransactionRepository,
 	productRepository productrepository.ProductRepository, customerRepository customerrepository.CustomerRepository,
-	ownerrepository ownerrepository.OwnerRepository) TransactionService {
+	ownerrepository ownerrepository.OwnerRepository, chartRepository chartrepository.ChartRepository) TransactionService {
 	return &TransactionServiceImpl{
 		TransactionRepository: transactionRepository,
 		ProductRepository:     productRepository,
 		CustomerRepository:    customerRepository,
 		Ownerrepository:       ownerrepository,
+		ChartRepository:       chartRepository,
 	}
 }
 
@@ -49,8 +52,10 @@ func (transactionService *TransactionServiceImpl) MakeOrder(req webtransaction.T
 	merkName, _ := transactionService.TransactionRepository.GetMerkNameByProduct(product.Id)
 
 	// TotalPrice : ( QTY * harga_product ) / tax %
+	total := product.Price * req.Qty
+
 	taxProduct := float64(req.Qty*product.Price) * (tax / 100)
-	totalPrice := product.Price + int(taxProduct) + product.ShippingCost
+	totalPrice := total + int(taxProduct) + product.ShippingCost
 
 	transactionDetail := entity.TransactionOrderDetail{
 		BuyDate:        time.Now().Truncate(24 * time.Hour),
@@ -65,15 +70,17 @@ func (transactionService *TransactionServiceImpl) MakeOrder(req webtransaction.T
 
 	txDetail, _ := transactionService.TransactionRepository.CreateOrderDetail(&transactionDetail)
 
-	transactionOrder := entity.TransactionOrder{
-		Qty:           req.Qty,
-		Total:         totalPrice,
-		CustomerId:    req.CustomerId,
-		ProductId:     req.ProductId,
-		DetailOrderId: txDetail.Id,
+	transactionOrder := []*entity.TransactionOrder{
+		{
+			Qty:           req.Qty,
+			Total:         totalPrice,
+			CustomerId:    req.CustomerId,
+			ProductId:     req.ProductId,
+			DetailOrderId: txDetail.Id,
+		},
 	}
 
-	transactionData, _ := transactionService.TransactionRepository.CreateOrder(&transactionOrder)
+	transactionData, _ := transactionService.TransactionRepository.CreateOrder(transactionOrder)
 
 	transactionResponse := webtransaction.TransactionResponse{
 		CustomerName:   customer.Name,
@@ -81,7 +88,7 @@ func (transactionService *TransactionServiceImpl) MakeOrder(req webtransaction.T
 		ProductName:    product.Name,
 		ProductPrice:   product.Price,
 		ShippingCost:   product.ShippingCost,
-		Qty:            transactionData.Qty,
+		Qty:            transactionData[0].Qty,
 		Tax:            taxProduct,
 		TotalPrice:     txDetail.TotalPrice,
 		BuyDate:        txDetail.BuyDate.Format("2006-01-02"),
@@ -92,7 +99,7 @@ func (transactionService *TransactionServiceImpl) MakeOrder(req webtransaction.T
 	return transactionResponse, nil
 }
 
-func (transactionService *TransactionServiceImpl) CustomerPayment(req webtransaction.PaymentCreateRequest) ([]webcustomer.TransactionCustomer, error) {
+func (transactionService *TransactionServiceImpl) CustomerPayment(req webtransaction.PaymentCreateRequest) (webtransaction.CustomerPaymentResponse, error) {
 	// Ambil dulu total price & virtual accountnya
 	// Validasi total price, va,  ,wajib photo bukti pembayaran
 	// kalo ga sama, return error
@@ -111,64 +118,172 @@ func (transactionService *TransactionServiceImpl) CustomerPayment(req webtransac
 		Photo:  req.Photo.Filename,
 	}
 
-	var virtualAccount, qty, productId int
-	var totalPrice float64
+	var (
+		virtualAccount, qty, productId int
+		totalPrice                     float64
+		productResponses               []webtransaction.ProductResponse
+		txCustomerResponse             entity.TransactionCustomer
+	)
 
 	txCustomerData, _ := transactionService.CustomerRepository.FindTransactionCustomerById(0, req.VirtualAccount)
 
-	transactionCustomerResponse := make([]webcustomer.TransactionCustomer, len(txCustomerData))
-	for i, txCustomer := range txCustomerData {
-		transactionCustomerResponse[i] = webcustomer.TransactionCustomer{
+	for _, txCustomer := range txCustomerData {
+		productResponse := webtransaction.ProductResponse{
+			MerkName:     txCustomer.MerkName,
+			ProductName:  txCustomer.ProductName,
+			ProductPrice: txCustomer.ProductPrice,
+			Qty:          txCustomer.Qty,
+		}
+
+		txCustomerResponse = entity.TransactionCustomer{
 			CustomerName:   txCustomer.CustomerName,
-			MerkName:       txCustomer.MerkName,
-			ProductId:      txCustomer.ProductId,
-			ProductName:    txCustomer.ProductName,
-			ProductPrice:   txCustomer.ProductPrice,
 			ShippingCost:   txCustomer.ShippingCost,
-			Qty:            txCustomer.Qty,
 			Tax:            txCustomer.Tax,
 			TotalPrice:     txCustomer.TotalPrice,
-			BuyDate:        txCustomer.BuyDate.Format("2006-01-02"),
 			Status:         "Paid",
 			StoreName:      txCustomer.StoreName,
+			BuyDate:        txCustomer.BuyDate,
 			VirtualAccount: txCustomer.VirtualAccount,
-			Photo:          req.Photo.Filename,
 		}
+
+		productResponses = append(productResponses, productResponse)
+
 		totalPrice = txCustomer.TotalPrice
 		virtualAccount = txCustomer.VirtualAccount
 		qty = txCustomer.Qty
 		productId = txCustomer.ProductId
+
 	}
 
-	fmt.Printf("txCustomerData: %v\n", txCustomerData)
-
-	fmt.Printf("productId: %v\n", productId)
-	fmt.Printf("virtualAccount: %v\n", virtualAccount)
-	fmt.Printf("req.VirtualAccount: %v\n", req.VirtualAccount)
-	fmt.Scanln()
 	if float64(req.Pay) < totalPrice {
-		return []webcustomer.TransactionCustomer{}, fmt.Errorf("uang kurang")
+		return webtransaction.CustomerPaymentResponse{}, fmt.Errorf("uang kurang")
 	}
 
 	if virtualAccount != req.VirtualAccount {
-		return []webcustomer.TransactionCustomer{}, fmt.Errorf("virtual account salah")
+		return webtransaction.CustomerPaymentResponse{}, fmt.Errorf("virtual account salah")
 	}
 
 	transactionService.TransactionRepository.CustomerPayment(&pay)
 	transactionService.TransactionRepository.UpdatePhotoAndStatus(&txDetail)
 
 	product, _ := transactionService.ProductRepository.FindProductById(productId)
-	// Update Stock ( - qty )
 
 	productStock := product.Stock - int16(qty)
 	stock := entity.Product{
 		Id:    productId,
 		Stock: productStock,
 	}
-	fmt.Printf("stock: %v\n", stock)
 
 	p, _ := transactionService.ProductRepository.UpdateProductStock(&stock)
 	fmt.Printf("p: %v\n", p)
 
+	transactionCustomerResponse := webtransaction.CustomerPaymentResponse{
+		CustomerName:   txCustomerResponse.CustomerName,
+		Product:        productResponses,
+		ShippingCost:   txCustomerResponse.ShippingCost,
+		Tax:            txCustomerResponse.Tax,
+		TotalPrice:     txCustomerResponse.TotalPrice,
+		BuyDate:        txCustomerResponse.BuyDate.Format("2006-01-02"),
+		Status:         "Paid",
+		StoreName:      txCustomerResponse.StoreName,
+		VirtualAccount: txCustomerResponse.VirtualAccount,
+		Photo:          req.Photo.Filename,
+	}
+
 	return transactionCustomerResponse, nil
+}
+
+func (transactionService *TransactionServiceImpl) MakeMultipleOrder(req webtransaction.TransactionOrderCreateRequest) (webtransaction.TransactionMultiplerResponse, error) {
+	// bth chart repo buat ambil semua datanya
+
+	// Butuh Repository FIND Product By Id
+	//---- Buat dapetin harga product dan nama
+
+	// Butuh Repository FIND Customer By Id
+	//----- Buat dapetin nama
+
+	// Butuh Repository FIND Owner By Id
+	//------ Buat dapetin TAX
+	fmt.Printf("customer: %v\n", req.CustomerId)
+	fmt.Scanln()
+	virtualAccount := helper.GenerateRandomNumber()
+	c, _ := transactionService.ChartRepository.FindAll(req.CustomerId)
+
+	var (
+		total, tax        float64
+		storeName         string
+		shippingCost      int
+		charts            []entity.Chart
+		transactionOrders []*entity.TransactionOrder
+		productResponses  []webtransaction.ProductResponse
+	)
+
+	for _, chart := range c {
+		fmt.Printf("chartTotal: %v\n", chart.Total)
+		total = total + chart.Total
+		product, _ := transactionService.ProductRepository.FindProductById(chart.ProductId)
+		sn, t, _ := transactionService.Ownerrepository.GetTaxAndStoreOwner(chart.ProductId)
+		mn, _ := transactionService.TransactionRepository.GetMerkNameByProduct(product.Id)
+		charts = append(charts, chart)
+
+		storeName = sn
+		tax = t
+		shippingCost = product.ShippingCost
+
+		productResponse := webtransaction.ProductResponse{
+			MerkName:     mn,
+			ProductName:  product.Name,
+			ProductPrice: product.Price,
+			Qty:          chart.Qty,
+		}
+
+		productResponses = append(productResponses, productResponse)
+	}
+
+	customer, _ := transactionService.CustomerRepository.FindById(req.CustomerId)
+	fmt.Printf("total: %v\n", total)
+	fmt.Printf("tax: %v\n", tax)
+	taxProduct := total * (tax / 100)
+	totalPrice := total + taxProduct + float64(shippingCost)
+
+	transactionDetail := entity.TransactionOrderDetail{
+		BuyDate:        time.Now().Truncate(24 * time.Hour),
+		Status:         "waiting payment",
+		TotalPrice:     int(totalPrice),
+		Photo:          "None",
+		Tax:            taxProduct,
+		VirtualAccount: int64(virtualAccount),
+	}
+
+	txDetail, _ := transactionService.TransactionRepository.CreateOrderDetail(&transactionDetail)
+
+	for _, c := range charts {
+		transactionOrder := entity.TransactionOrder{
+			Qty:           c.Qty,
+			Total:         int(c.Total),
+			CustomerId:    c.CustomerId,
+			ProductId:     c.ProductId,
+			DetailOrderId: txDetail.Id,
+		}
+
+		transactionOrders = append(transactionOrders, &transactionOrder)
+	}
+
+	log.Println(transactionOrders, "transactionOrders")
+	fmt.Scanln()
+
+	transactionService.TransactionRepository.CreateOrder(transactionOrders)
+
+	transactionResponse := webtransaction.TransactionMultiplerResponse{
+		CustomerName:   customer.Name,
+		Product:        productResponses,
+		ShippingCost:   shippingCost,
+		Tax:            taxProduct,
+		TotalPrice:     txDetail.TotalPrice,
+		BuyDate:        txDetail.BuyDate.Format("2006-01-02"),
+		Status:         "waiting payment",
+		StoreName:      storeName,
+		VirtualAccount: virtualAccount,
+	}
+	return transactionResponse, nil
 }

@@ -244,16 +244,16 @@ func (adminController *AdminControllerImpl) UnregOwner(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"admin/owner/profile": webResponses})
 }
 
-func (adminController *AdminControllerImpl) ViewTransactionCustomerById(context *gin.Context) {
-	idCustomer, _ := strconv.Atoi(context.Param("id"))
-	transactionOwnerResponse, err := adminController.adminService.ViewTransactionCustomerById(idCustomer)
-	helper.InternalServerError(err, context)
+// func (adminController *AdminControllerImpl) ViewTransactionCustomerById(context *gin.Context) {
+// 	idCustomer, _ := strconv.Atoi(context.Param("id"))
+// 	transactionOwnerResponse, err := adminController.adminService.ViewTransactionCustomerById(idCustomer)
+// 	helper.InternalServerError(err, context)
 
-	webResponses := web.WebResponse{
-		Code:    http.StatusOK,
-		Status:  "OK",
-		Message: "list of transaction customer by id",
-		Data:    transactionOwnerResponse,
-	}
-	context.JSON(http.StatusOK, gin.H{"admin/owner/profile": webResponses})
-}
+// 	webResponses := web.WebResponse{
+// 		Code:    http.StatusOK,
+// 		Status:  "OK",
+// 		Message: "list of transaction customer by id",
+// 		Data:    transactionOwnerResponse,
+// 	}
+// 	context.JSON(http.StatusOK, gin.H{"admin/owner/profile": webResponses})
+// }

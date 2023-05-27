@@ -21,5 +21,5 @@ type AdminController interface {
 	ViewOwnerByName(context *gin.Context)
 	UnregOwner(context *gin.Context)
 
-	ViewTransactionCustomerById(context *gin.Context)
+	// ViewTransactionCustomerById(context *gin.Context)
 }

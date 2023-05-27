@@ -16,18 +16,21 @@ func NewTransactionRepository(Db *sql.DB) TransactionRepository {
 	}
 }
 
-func (r *TransactionRepositoryImpl) CreateOrder(transactionOrder *entity.TransactionOrder) (*entity.TransactionOrder, error) {
+func (r *TransactionRepositoryImpl) CreateOrder(transactionOrders []*entity.TransactionOrder) ([]*entity.TransactionOrder, error) {
 	stmt, err := r.Db.Prepare("INSERT INTO tbl_transaction_order (quantity, total, customer_id, product_id, detail_order_id) VALUES ($1, $2, $3, $4, $5) RETURNING id")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
-	err = stmt.QueryRow(transactionOrder.Qty, transactionOrder.Total, transactionOrder.CustomerId, transactionOrder.ProductId, transactionOrder.DetailOrderId).Scan(&transactionOrder.Id)
-	if err != nil {
-		return nil, err
+
+	for _, transactionOrder := range transactionOrders {
+		err = stmt.QueryRow(transactionOrder.Qty, transactionOrder.Total, transactionOrder.CustomerId, transactionOrder.ProductId, transactionOrder.DetailOrderId).Scan(&transactionOrder.Id)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return transactionOrder, nil
+	return transactionOrders, nil
 }
 
 func (r *TransactionRepositoryImpl) CreateOrderDetail(TransactionOrderDetail *entity.TransactionOrderDetail) (*entity.TransactionOrderDetail, error) {

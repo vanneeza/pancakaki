@@ -44,7 +44,7 @@ func (TransactionController *TransactionControllerImpl) MakeOrder(context *gin.C
 		Data:    TransactionResponse,
 	}
 
-	context.JSON(http.StatusCreated, gin.H{"Transaction": webResponse})
+	context.JSON(http.StatusCreated, gin.H{"customer/transaction": webResponse})
 
 }
 
@@ -89,11 +89,32 @@ func (TransactionController *TransactionControllerImpl) CustomerPayment(context 
 	webResponse := web.WebResponse{
 		Code:    http.StatusCreated,
 		Status:  "CREATED",
-		Message: "the transaction was completed",
+		Message: "the transaction was completed, waiting owner to send the product",
 		Data:    TransactionResponse,
 	}
 
-	context.JSON(http.StatusCreated, gin.H{"payment": webResponse})
+	context.JSON(http.StatusCreated, gin.H{"customer/payment": webResponse})
+
+}
+
+func (TransactionController *TransactionControllerImpl) MakeMultipleOrder(context *gin.Context) {
+
+	var Transaction webtransaction.TransactionOrderCreateRequest
+
+	err := context.ShouldBind(&Transaction)
+	helper.InternalServerError(err, context)
+
+	TransactionResponse, err := TransactionController.TransactionService.MakeMultipleOrder(Transaction)
+	helper.InternalServerError(err, context)
+
+	webResponse := web.WebResponse{
+		Code:    http.StatusCreated,
+		Status:  "CREATED",
+		Message: "the transaction still progress, waiting to payment",
+		Data:    TransactionResponse,
+	}
+
+	context.JSON(http.StatusCreated, gin.H{"customer/transaction": webResponse})
 
 }
 

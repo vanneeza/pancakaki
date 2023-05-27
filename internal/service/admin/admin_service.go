@@ -3,7 +3,6 @@ package adminservice
 import (
 	webadmin "pancakaki/internal/domain/web/admin"
 	webbank "pancakaki/internal/domain/web/bank"
-	webcustomer "pancakaki/internal/domain/web/customer"
 	webowner "pancakaki/internal/domain/web/owner"
 )
 
@@ -26,5 +25,5 @@ type AdminService interface {
 	ViewOwnerByName(ownerName string) (webadmin.FindOwnerResponse, error)
 	UnregOwner(ownerId int) (webowner.OwnerResponse, error)
 
-	ViewTransactionCustomerById(customerId int) ([]webcustomer.TransactionCustomer, error)
+	// ViewTransactionCustomerById(customerId int) ([]webcustomer.TransactionCustomer, error)
 }
