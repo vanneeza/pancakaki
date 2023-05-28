@@ -1,14 +1,14 @@
 package customerservice
 
 import (
-	"errors"
 	"fmt"
-	"log"
 	"pancakaki/internal/domain/entity"
 	webcustomer "pancakaki/internal/domain/web/customer"
 	webtransaction "pancakaki/internal/domain/web/transaction"
 	customerrepository "pancakaki/internal/repository/customer"
 	"pancakaki/utils/helper"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type CustomerServiceImpl struct {
@@ -23,15 +23,14 @@ func NewCustomerService(customerRepository customerrepository.CustomerRepository
 
 func (customerService *CustomerServiceImpl) Register(req webcustomer.CustomerCreateRequest) (webcustomer.CustomerResponse, error) {
 
+	encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	customer := entity.Customer{
 		Name:     req.Name,
 		NoHp:     req.NoHp,
 		Address:  req.Address,
-		Password: req.Password,
+		Password: string(encryptedPassword),
 	}
-	log.Println(customer, "service reg")
-	log.Println(req, "service reg")
-	fmt.Scanln()
+
 	customerData, _ := customerService.CustomerRepository.Create(&customer)
 
 	customerResponse := webcustomer.CustomerResponse{
@@ -40,6 +39,7 @@ func (customerService *CustomerServiceImpl) Register(req webcustomer.CustomerCre
 		NoHp:     customerData.NoHp,
 		Address:  customerData.Address,
 		Password: customerData.Password,
+		Role:     "customer",
 	}
 
 	return customerResponse, nil
@@ -62,27 +62,9 @@ func (customerService *CustomerServiceImpl) ViewAll() ([]webcustomer.CustomerRes
 	return customerResponse, nil
 }
 
-func (customerService *CustomerServiceImpl) ViewOne(customerName string) (webcustomer.CustomerResponse, error) {
-	customer, err := customerService.CustomerRepository.FindByName(customerName)
+func (customerService *CustomerServiceImpl) ViewOne(customerId int, customerName, customerNoHp string) (webcustomer.CustomerResponse, error) {
+	customer, err := customerService.CustomerRepository.FindByIdOrNameOrHp(customerId, customerName, customerNoHp)
 	helper.PanicErr(err)
-
-	customerResponse := webcustomer.CustomerResponse{
-		Id:       customer.Id,
-		Name:     customer.Name,
-		NoHp:     customer.NoHp,
-		Address:  customer.Address,
-		Password: customer.Password,
-	}
-
-	return customerResponse, nil
-}
-
-func (customerService *CustomerServiceImpl) ViewByNoHp(noHp string) (webcustomer.CustomerResponse, error) {
-	var customerResponses webcustomer.CustomerResponse
-	customer, err := customerService.CustomerRepository.FindByNpHp(noHp)
-	if err != nil {
-		return customerResponses, errors.New("user with no hp " + noHp + " not found")
-	}
 
 	customerResponse := webcustomer.CustomerResponse{
 		Id:       customer.Id,
@@ -97,13 +79,13 @@ func (customerService *CustomerServiceImpl) ViewByNoHp(noHp string) (webcustomer
 }
 
 func (customerService *CustomerServiceImpl) Edit(req webcustomer.CustomerUpdateRequest) (webcustomer.CustomerResponse, error) {
-
+	encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	customer := entity.Customer{
 		Id:       req.Id,
 		Name:     req.Name,
 		NoHp:     req.NoHp,
 		Address:  req.Address,
-		Password: req.Password,
+		Password: string(encryptedPassword),
 	}
 
 	customerData, err := customerService.CustomerRepository.Update(&customer)
@@ -115,14 +97,17 @@ func (customerService *CustomerServiceImpl) Edit(req webcustomer.CustomerUpdateR
 		NoHp:     customerData.NoHp,
 		Address:  customerData.Address,
 		Password: customerData.Password,
+		Role:     "customer",
+		Token:    "NULL",
 	}
 
 	return customerResponse, nil
 }
 
-func (customerService *CustomerServiceImpl) Unreg(customerName string) (webcustomer.CustomerResponse, error) {
-
-	customerData, err := customerService.CustomerRepository.FindByName(customerName)
+func (customerService *CustomerServiceImpl) Unreg(customerId int, customerName, customerNoHp string) (webcustomer.CustomerResponse, error) {
+	fmt.Printf("customerId: %v\n", customerId)
+	fmt.Scanln()
+	customerData, err := customerService.CustomerRepository.FindByIdOrNameOrHp(customerId, customerName, customerNoHp)
 	helper.PanicErr(err)
 
 	err = customerService.CustomerRepository.Delete(customerData.Id)
@@ -133,6 +118,8 @@ func (customerService *CustomerServiceImpl) Unreg(customerName string) (webcusto
 		NoHp:     customerData.NoHp,
 		Address:  customerData.Address,
 		Password: customerData.Password,
+		Role:     customerData.Role,
+		Token:    "NULL",
 	}
 
 	return customerResponse, nil

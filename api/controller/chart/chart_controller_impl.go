@@ -8,6 +8,7 @@ import (
 	"pancakaki/utils/helper"
 	"strconv"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,9 +23,25 @@ func NewChartController(chartService chartservice.ChartService) ChartController 
 }
 
 func (chartController *ChartControllerImpl) Register(context *gin.Context) {
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	idClaim, _ := claims["id"].(string)
+	role := claims["role"]
+	idCustomer, _ := strconv.Atoi(idClaim)
+
+	if role != "customer" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "user is unauthorized",
+			Data:    "",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
 
 	var chart webchart.ChartCreateRequest
 
+	chart.CustomerId = idCustomer
 	err := context.ShouldBind(&chart)
 	helper.InternalServerError(err, context)
 	chartResponse, err := chartController.chartService.Register(chart)
@@ -42,8 +59,23 @@ func (chartController *ChartControllerImpl) Register(context *gin.Context) {
 }
 
 func (chartController *ChartControllerImpl) ViewAll(context *gin.Context) {
-	chartId, _ := strconv.Atoi(context.Param("id"))
-	chartResponse, err := chartController.chartService.ViewAll(chartId)
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	idClaim, _ := claims["id"].(string)
+	role := claims["role"]
+	idCustomer, _ := strconv.Atoi(idClaim)
+
+	if role != "customer" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "user is unauthorized",
+			Data:    "",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
+
+	chartResponse, err := chartController.chartService.ViewAll(idCustomer)
 	helper.InternalServerError(err, context)
 
 	web_response := web.WebResponse{
@@ -70,6 +102,21 @@ func (chartController *ChartControllerImpl) ViewOne(context *gin.Context) {
 }
 
 func (chartController *ChartControllerImpl) Edit(context *gin.Context) {
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	// idClaim, _ := claims["id"].(string)
+	role := claims["role"]
+
+	if role != "customer" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "user is unauthorized",
+			Data:    "",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
+
 	var chart webchart.ChartUpdateRequest
 	err := context.ShouldBindJSON(&chart)
 	helper.InternalServerError(err, context)

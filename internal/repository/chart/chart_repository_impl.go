@@ -18,6 +18,8 @@ func NewChartRepository(Db *sql.DB) ChartRepository {
 }
 
 func (r *ChartRepositoryImpl) Create(chart *entity.Chart) (*entity.Chart, error) {
+	log.Println(chart, "chart repository")
+	fmt.Scanln()
 	stmt, err := r.Db.Prepare("INSERT INTO tbl_chart (quantity, total, customer_id, product_id) VALUES ($1, $2, $3, $4) RETURNING id")
 	s := fmt.Sprintf("INSERT INTO tbl_chart (quantity, total, customer_id, product_id) VALUES (%d, %f, %d, %d) RETURNING id", chart.Qty, chart.Total, chart.CustomerId, chart.ProductId)
 	log.Println(s)
@@ -28,7 +30,8 @@ func (r *ChartRepositoryImpl) Create(chart *entity.Chart) (*entity.Chart, error)
 	defer stmt.Close()
 
 	err = stmt.QueryRow(chart.Qty, chart.Total, chart.CustomerId, chart.ProductId).Scan(&chart.Id)
-
+	log.Println(chart, "chart Row repository")
+	fmt.Scanln()
 	if err != nil {
 		return nil, err
 	}

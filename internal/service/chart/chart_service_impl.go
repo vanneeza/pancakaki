@@ -24,7 +24,8 @@ func NewChartService(chartRepository chartrepository.ChartRepository, productRep
 }
 
 func (chartService *ChartServiceImpl) Register(req webchart.ChartCreateRequest) (webchart.ChartResponse, error) {
-
+	log.Println(req, "req")
+	fmt.Scanln()
 	product, _ := chartService.ProductRepository.FindProductById(req.ProductId)
 	totalPrice := product.Price * req.Qty
 
@@ -35,7 +36,7 @@ func (chartService *ChartServiceImpl) Register(req webchart.ChartCreateRequest) 
 		ProductId:  req.ProductId,
 	}
 
-	log.Println(chart, "Chart")
+	log.Println(chart, "chart service")
 	fmt.Scanln()
 
 	chartData, _ := chartService.ChartRepository.Create(&chart)

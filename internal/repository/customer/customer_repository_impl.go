@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"pancakaki/internal/domain/entity"
 	"pancakaki/utils/helper"
+	"strconv"
 )
 
 type CustomerRepositoryImpl struct {
@@ -52,53 +53,24 @@ func (r *CustomerRepositoryImpl) FindAll() ([]entity.Customer, error) {
 	return customers, nil
 }
 
-func (r *CustomerRepositoryImpl) FindByName(customerName string) (*entity.Customer, error) {
+func (r *CustomerRepositoryImpl) FindByIdOrNameOrHp(customerId int, customerName, customerNoHP string) (*entity.Customer, error) {
 	var customer entity.Customer
-	stmt, err := r.Db.Prepare("SELECT id, name, no_hp, address, password FROM tbl_customer WHERE name = $1")
+	customerNohHpConvert, _ := strconv.Atoi(customerNoHP)
+	fmt.Printf("customerId: %v\n", customerId)
+	fmt.Scanln()
+	stmt, err := r.Db.Prepare("SELECT id, name, no_hp, address, password, role FROM tbl_customer WHERE is_deleted = 'false' AND id = $1 OR name = $2 OR no_hp = $3")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error prepare")
 	}
 	defer stmt.Close()
-
-	row := stmt.QueryRow(customerName)
-	err = row.Scan(&customer.Id, &customer.Name, &customer.NoHp, &customer.Address, &customer.Password)
-	if err != nil {
-		return nil, err
-	}
-
-	return &customer, nil
-}
-
-func (r *CustomerRepositoryImpl) FindById(customerId int) (*entity.Customer, error) {
-	var customer entity.Customer
-	stmt, err := r.Db.Prepare("SELECT id, name, no_hp, address, password FROM tbl_customer WHERE id = $1")
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-	row := stmt.QueryRow(customerId)
-	err = row.Scan(&customer.Id, &customer.Name, &customer.NoHp, &customer.Address, &customer.Password)
-	if err != nil {
-		return nil, err
-	}
-	return &customer, nil
-}
-
-func (r *CustomerRepositoryImpl) FindByNpHp(noHp string) (*entity.Customer, error) {
-	var customer entity.Customer
-	stmt, err := r.Db.Prepare("SELECT id, name, no_hp, address, password, role FROM tbl_customer WHERE no_hp = $1")
-	if err != nil {
-		return nil, err
-	}
-
-	defer stmt.Close()
-	row := stmt.QueryRow(noHp)
+	row := stmt.QueryRow(customerId, customerName, customerNohHpConvert)
 	err = row.Scan(&customer.Id, &customer.Name, &customer.NoHp, &customer.Address, &customer.Password, &customer.Role)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("customer not found")
 	}
 	return &customer, nil
 }
+
 func (r *CustomerRepositoryImpl) Update(customer *entity.Customer) (*entity.Customer, error) {
 	stmt, err := r.Db.Prepare("UPDATE tbl_customer SET name = $1, no_hp = $2,  address = $3,  password = $4 WHERE id = $5")
 	if err != nil {
@@ -115,7 +87,7 @@ func (r *CustomerRepositoryImpl) Update(customer *entity.Customer) (*entity.Cust
 }
 
 func (r *CustomerRepositoryImpl) Delete(customerId int) error {
-	stmt, err := r.Db.Prepare("UPDATE customer SET is_deleted = TRUE WHERE id = $1")
+	stmt, err := r.Db.Prepare("UPDATE tbl_customer SET is_deleted = TRUE WHERE id = $1")
 	if err != nil {
 		return err
 	}

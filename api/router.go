@@ -63,8 +63,6 @@ func Run(db *sql.DB) *gin.Engine {
 	customerRepository := customerrepository.NewCustomerRepository(db)
 	bankRepoCha := bankrepository.NewBankRepository(db)
 
-<<<<<<< HEAD
-=======
 	customerService := customerservice.NewCustomerService(customerRepository)
 	customerController := customercontroller.NewCustomerController(customerService)
 
@@ -82,7 +80,6 @@ func Run(db *sql.DB) *gin.Engine {
 
 	///////////-----------------------------------------------------------------------------------------------------------////////////////////
 
->>>>>>> owner
 	membershipRepositoryCha := membershiprepository.NewMembershipRepository(db)
 	membershipServiceCHa := membershipservice.NewMembershipService(membershipRepositoryCha)
 	membershipController := membershipcontroller.NewMembershipController(membershipServiceCHa)
@@ -91,10 +88,6 @@ func Run(db *sql.DB) *gin.Engine {
 	adminService := adminservice.NewAdminService(adminRepository, bankRepoCha, ownerRepository, customerRepository)
 	adminController := admincontroller.NewAdminController(adminService)
 
-<<<<<<< HEAD
-	customerService := customerservice.NewCustomerService(customerRepository)
-	customerController := customercontroller.NewCustomerController(customerService)
-
 	chartRepository := chartrepository.NewChartRepository(db)
 	chartService := chartservice.NewChartService(chartRepository, productRepository)
 	chartController := chartcontroller.NewChartController(chartService)
@@ -102,9 +95,7 @@ func Run(db *sql.DB) *gin.Engine {
 	transactionRepositoryCha := transactionrepository.NewTransactionRepository(db)
 	transactionServiceCHa := transactionservice.NewTransactionService(transactionRepositoryCha, productRepository, customerRepository, ownerRepository, chartRepository)
 	transactionController := transactioncontroller.NewTransactionController(transactionServiceCHa)
-=======
 	loginController := logincontroller.NewLoginController(ownerService, customerService)
->>>>>>> owner
 
 	var jwtKey = "secret_key"
 	pancakaki := r.Group("pancakaki/v1/")
@@ -147,8 +138,8 @@ func Run(db *sql.DB) *gin.Engine {
 	}
 
 	pancakaki.POST("/login", loginController.Login)
-
 	pancakaki.POST("/register/owner", ownerController.CreateOwner)
+	pancakaki.POST("register/customer", customerController.Register)
 	pancakaki.GET("/ownerhp/:hp", ownerController.GetOwnerByNoHp)
 
 	owner := pancakaki.Group("/owner")
@@ -169,19 +160,6 @@ func Run(db *sql.DB) *gin.Engine {
 		owner.GET("/store/:storeid/product/:productid", productController.FindProductByStoreIdOwnerIdProductId)
 		owner.PUT("/store/product", productController.UpdateMainProduct)
 		owner.DELETE("/store/:storeid/product/:productid", productController.DeleteMainProduct)
-	}
-
-	merk := pancakaki.Group("/testaja")
-	{
-		store := pancakaki.Group("/stores")
-		{
-			store.POST("/product", merkcontroller.Register)
-		}
-		merk.POST("/merk", merkcontroller.Register)
-		merk.GET("/", merkcontroller.ViewAll)
-		merk.GET("/:id", merkcontroller.ViewOne)
-		merk.PUT("/", merkcontroller.Unreg)
-		merk.DELETE("/:id", merkcontroller.Unreg)
 	}
 
 	product := pancakaki.Group("/products")
@@ -207,26 +185,25 @@ func Run(db *sql.DB) *gin.Engine {
 	customer := pancakaki.Group("/customers")
 	customer.Use(helper.AuthMiddleware(jwtKey))
 	{
-		customer.POST("/", customerController.Register)
-		customer.GET("/", customerController.ViewAll)
-		customer.GET("/:name", customerController.ViewOne)
-		customer.PUT("/:id", customerController.Edit)
-		customer.DELETE("/:name", customerController.Unreg)
+
+		customer.GET("/profile", customerController.ViewOne)
+		customer.PUT("/profile", customerController.Edit)
+		customer.DELETE("/profile", customerController.Unreg)
 
 		//------------ TRANSACTION CUSTOMER LANGSUNG BELI --------------------//
 		customer.POST("/transaction", transactionController.MakeOrder)
-		customer.POST("/transactions", transactionController.MakeMultipleOrder)
+		customer.POST("/transaction/multiple", transactionController.MakeMultipleOrder)
 		customer.POST("/payment/:id", transactionController.CustomerPayment)
 
 		//---------- Customer Chart ------------------- //
 		customer.POST("/chart/", chartController.Register)
-		customer.GET("/charts/:id", chartController.ViewAll)
+		customer.GET("/charts/", chartController.ViewAll)
 		customer.GET("/chart/:id", chartController.ViewOne)
 		customer.PUT("/chart/:id", chartController.Edit)
 		customer.DELETE("/chart/:id", chartController.Unreg)
 
 		//------- NOTIFICATION ------
-		customer.GET("/notification/:id", customerController.Notification)
+		customer.GET("/notification", customerController.Notification)
 		////------------------- TEST PAYMENTGATEWAY : PROSESS --------------//
 		// customer.POST("/payment", transactionController.CreatePaymentIntent)
 	}

@@ -30,7 +30,6 @@ func (repo *ownerRepository) CreateOwner(newOwner *entity.Owner) (*entity.Owner,
 	defer stmt.Close()
 
 	ownerNoHp, err := strconv.ParseInt(newOwner.NoHp, 10, 64)
-	// ownerNoHp1, err := strconv.Atoi(newOwner.NoHp)
 	if err != nil {
 		return nil, err
 	}

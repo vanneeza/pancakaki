@@ -5,7 +5,7 @@ import "time"
 type Customer struct {
 	Id       int
 	Name     string
-	NoHp     int64
+	NoHp     string
 	Address  string
 	Password string
 	IsDelete bool

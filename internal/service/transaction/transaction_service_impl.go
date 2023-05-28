@@ -47,7 +47,7 @@ func (transactionService *TransactionServiceImpl) MakeOrder(req webtransaction.T
 	virtualAccount := helper.GenerateRandomNumber()
 
 	product, _ := transactionService.ProductRepository.FindProductById(req.ProductId)
-	customer, _ := transactionService.CustomerRepository.FindById(req.CustomerId)
+	customer, _ := transactionService.CustomerRepository.FindByIdOrNameOrHp(req.CustomerId, "", "")
 	storeName, tax, _ := transactionService.Ownerrepository.GetTaxAndStoreOwner(req.ProductId)
 	merkName, _ := transactionService.TransactionRepository.GetMerkNameByProduct(product.Id)
 
@@ -240,7 +240,7 @@ func (transactionService *TransactionServiceImpl) MakeMultipleOrder(req webtrans
 		productResponses = append(productResponses, productResponse)
 	}
 
-	customer, _ := transactionService.CustomerRepository.FindById(req.CustomerId)
+	customer, _ := transactionService.CustomerRepository.FindByIdOrNameOrHp(req.CustomerId, "", "")
 	fmt.Printf("total: %v\n", total)
 	fmt.Printf("tax: %v\n", tax)
 	taxProduct := total * (tax / 100)

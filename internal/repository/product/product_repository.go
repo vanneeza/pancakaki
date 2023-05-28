@@ -316,19 +316,19 @@ func (repo *productRepository) UpdateProductStock(updateProduct *entity.Product)
 
 func (repo *productRepository) FindProductById(productId int) (*entity.Product, error) {
 	var product entity.Product
-	stmt, err := repo.db.Prepare("SELECT id,name,price,stock,description,shipping_cost,merk_id,store_id FROM tbl_product where id = $1")
+	stmt, err := repo.db.Prepare("SELECT id, name, price, stock, description, shipping_cost, merk_id, store_id FROM tbl_product WHERE id = $1")
 	if err != nil {
 		return nil, err
 	}
-	defer stmt.Close()
 
-	err = stmt.QueryRow(productId).Scan(&product.Id, &product.Name, &product.Price, &product.Stock, &product.ShippingCost, &product.MerkId, &product.StoreId)
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("product with id %d not found", productId)
-	} else if err != nil {
+	defer stmt.Close()
+	row := stmt.QueryRow(productId)
+	err = row.Scan(&product.Id, &product.Name, &product.Price, &product.Stock, &product.Description, &product.ShippingCost, &product.MerkId, &product.StoreId)
+	fmt.Printf("product: %v\n", product)
+	fmt.Scanln()
+	if err != nil {
 		return nil, err
 	}
-
 	return &product, nil
 }
 

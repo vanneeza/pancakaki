@@ -2,6 +2,7 @@ package helper
 
 import (
 	"net/http"
+	"pancakaki/internal/domain/web"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -33,4 +34,21 @@ func AuthMiddleware(jwtKey string) gin.HandlerFunc {
 
 		ctx.Next()
 	}
+}
+
+func AuthCustomer(context *gin.Context) (*gin.Context, interface{}) {
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	idClaim := claims["id"]
+	role := claims["role"].(string)
+	if role != "customer" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "unauthorized",
+			Data:    "user is unauthorized",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return context, 0
+	}
+	return context, idClaim
 }
