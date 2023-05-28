@@ -1,6 +1,7 @@
 package productservice
 
 import (
+	"database/sql"
 	"errors"
 	"pancakaki/internal/domain/entity"
 	webproduct "pancakaki/internal/domain/web/product"
@@ -13,7 +14,8 @@ import (
 type ProductService interface {
 	InsertMainProduct(newProduct *webproduct.ProductCreateRequest, ownerId int) (*webproduct.ProductCreateResponse, error)
 	UpdateMainProduct(newUpdateProduct *webproduct.ProductUpdateRequest, ownerId int) (*webproduct.ProductCreateResponse, error)
-	DeleteProduct(deleteProduct *entity.Product) error
+	DeleteProduct(productId int, tx *sql.Tx) error
+	DeleteMainProduct(storeId int, ownerId int, productId int) error
 	FindAllProductByStoreIdAndOwnerId(storeId int, ownerId int) ([]entity.Product, error)
 	FindProductByStoreIdOwnerIdProductId(storeId int, ownerId int, productId int) (*entity.Product, error)
 	FindAllProduct() ([]entity.Product, error)
@@ -26,8 +28,43 @@ type productService struct {
 }
 
 // DeleteProduct implements ProductService
-func (s *productService) DeleteProduct(deleteProduct *entity.Product) error {
-	return s.productRepo.DeleteProduct(deleteProduct)
+func (s *productService) DeleteProduct(productId int, tx *sql.Tx) error {
+	return s.productRepo.DeleteProduct(productId, tx)
+}
+
+func (s *productService) DeleteMainProduct(storeId int, ownerId int, productId int) error {
+	getStoreByOwnerId, err := s.storeRepo.GetStoreByOwnerId(ownerId)
+	storeIdStr := strconv.Itoa(storeId)
+	if err != nil {
+		return errors.New("store with id " + storeIdStr + " not found")
+	}
+	checkStoreId := false
+	for _, v := range getStoreByOwnerId {
+		if v.Id == storeId {
+			checkStoreId = true
+		}
+	}
+	if !checkStoreId {
+		return errors.New("store with id " + storeIdStr + " is unauthorized")
+	}
+
+	getProductByStoreIdAndOwnerId, err := s.productRepo.FindAllProductByStoreIdAndOwnerId(storeId, ownerId)
+	// storeIdStr := strconv.Itoa(storeId)
+	if err != nil {
+		return errors.New("product not found")
+	}
+	checkProductId := false
+	for _, v := range getProductByStoreIdAndOwnerId {
+		if v.Id == productId {
+			checkProductId = true
+		}
+	}
+	productIdStr := strconv.Itoa(productId)
+	if !checkProductId {
+		return errors.New("product with id " + productIdStr + " is unauthorized")
+	}
+
+	return s.productRepo.DeleteMainProduct(storeId, ownerId, productId)
 }
 
 // FindAllProduct implements ProductService

@@ -17,7 +17,7 @@ import (
 type ProductImageHandler interface {
 	InsertProductImage(ctx *gin.Context)
 	// UpdateProductImage(ctx *gin.Context)
-	DeleteProductImage(ctx *gin.Context)
+	// DeleteProductImage(ctx *gin.Context)
 	FindProductImageById(ctx *gin.Context)
 	FindProductImageByName(ctx *gin.Context)
 	FindAllProductImage(ctx *gin.Context)
@@ -28,51 +28,51 @@ type productImageHandler struct {
 }
 
 // DeleteProductImage implements ProductImageHandler
-func (h *productImageHandler) DeleteProductImage(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusBadRequest,
-			Status:  "bad request",
-			Message: "bad request",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusBadRequest, result)
-		return
-	}
-	var productImage entity.ProductImage
-	productImage.Id = id
+// func (h *productImageHandler) DeleteProductImage(ctx *gin.Context) {
+// 	idParam := ctx.Param("id")
+// 	id, err := strconv.Atoi(idParam)
+// 	if err != nil {
+// 		result := web.WebResponse{
+// 			Code:    http.StatusBadRequest,
+// 			Status:  "bad request",
+// 			Message: "bad request",
+// 			Data:    err.Error(),
+// 		}
+// 		ctx.JSON(http.StatusBadRequest, result)
+// 		return
+// 	}
+// 	var productImage entity.ProductImage
+// 	productImage.Id = id
 
-	if err := ctx.ShouldBindJSON(&productImage); err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusInternalServerError,
-			Status:  "status internal server error",
-			Message: "status internal server error",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-	err = h.productImageService.DeleteProductImage(&productImage)
-	if err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusInternalServerError,
-			Status:  "status internal server error",
-			Message: "status internal server error",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-	result := web.WebResponse{
-		Code:    http.StatusOK,
-		Status:  "delete success",
-		Message: "success delete product image with id " + idParam,
-		Data:    err,
-	}
-	ctx.JSON(http.StatusOK, result)
-}
+// 	if err := ctx.ShouldBindJSON(&productImage); err != nil {
+// 		result := web.WebResponse{
+// 			Code:    http.StatusInternalServerError,
+// 			Status:  "status internal server error",
+// 			Message: "status internal server error",
+// 			Data:    err.Error(),
+// 		}
+// 		ctx.JSON(http.StatusInternalServerError, result)
+// 		return
+// 	}
+// 	err = h.productImageService.DeleteProductImageByProductId(&productImage)
+// 	if err != nil {
+// 		result := web.WebResponse{
+// 			Code:    http.StatusInternalServerError,
+// 			Status:  "status internal server error",
+// 			Message: "status internal server error",
+// 			Data:    err.Error(),
+// 		}
+// 		ctx.JSON(http.StatusInternalServerError, result)
+// 		return
+// 	}
+// 	result := web.WebResponse{
+// 		Code:    http.StatusOK,
+// 		Status:  "delete success",
+// 		Message: "success delete product image with id " + idParam,
+// 		Data:    err,
+// 	}
+// 	ctx.JSON(http.StatusOK, result)
+// }
 
 // FindAllProductImage implements ProductImageHandler
 func (h *productImageHandler) FindAllProductImage(ctx *gin.Context) {

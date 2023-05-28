@@ -9,7 +9,7 @@ import (
 type ProductImageRepository interface {
 	InsertProductImage(newProductImage *entity.ProductImage, tx *sql.Tx) (*entity.ProductImage, error)
 	UpdateProductImage(updateProductImage *entity.ProductImage, tx *sql.Tx) (*entity.ProductImage, error)
-	DeleteProductImage(deleteProductImage *entity.ProductImage) error
+	DeleteProductImageByProductId(productId int, tx *sql.Tx) error
 	FindProductImageById(id int) (*entity.ProductImage, error)
 	FindProductImageByName(name string) (*entity.ProductImage, error)
 	FindAllProductImage() ([]entity.ProductImage, error)
@@ -21,18 +21,18 @@ type productImageRepository struct {
 }
 
 // DeleteProductImage implements ProductImageRepository
-func (repo *productImageRepository) DeleteProductImage(deleteProductImage *entity.ProductImage) error {
-	stmt, err := repo.db.Prepare("UPDATE tbl_product_image SET is_delete = true WHERE id = $1")
+func (repo *productImageRepository) DeleteProductImageByProductId(productId int, tx *sql.Tx) error {
+	stmt, err := repo.db.Prepare("UPDATE tbl_product_image SET is_delete = true WHERE product_id = $1")
 	if err != nil {
 		return fmt.Errorf("failed to delete product image : %w", err)
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(deleteProductImage.Id)
-	if err != nil {
-		return fmt.Errorf("failed to delete product image : %w", err)
-	}
-
+	_, err = stmt.Exec(productId)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to delete product image : %w", err)
+	// }
+	validate(err, "delete product image", tx)
 	return nil
 }
 
@@ -59,7 +59,7 @@ func (repo *productImageRepository) FindAllProductImage() ([]entity.ProductImage
 
 func (repo *productImageRepository) FindAllProductImageByProductId(productId int) ([]entity.ProductImage, error) {
 	var productImages []entity.ProductImage
-	rows, err := repo.db.Query("SELECT id, image_url, product_id FROM tbl_product_image where product_id = $1", productId)
+	rows, err := repo.db.Query("SELECT id, image_url, product_id FROM tbl_product_image where is_deleted = false and product_id = $1", productId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get product image : %w", err)
 	}
@@ -80,7 +80,7 @@ func (repo *productImageRepository) FindAllProductImageByProductId(productId int
 // FindProductImageById implements ProductImageRepository
 func (repo *productImageRepository) FindProductImageById(id int) (*entity.ProductImage, error) {
 	var productImage entity.ProductImage
-	stmt, err := repo.db.Prepare("SELECT * FROM tbl_product_image WHERE id = $1")
+	stmt, err := repo.db.Prepare("SELECT id, image_url, product_id FROM tbl_product_image WHERE is_deleted = false and id = $1")
 	if err != nil {
 		return nil, err
 	}

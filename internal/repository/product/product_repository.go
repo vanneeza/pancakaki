@@ -13,8 +13,9 @@ type ProductRepository interface {
 	InsertMainProduct(newProduct *webproduct.ProductCreateRequest, ownerId int) (*webproduct.ProductCreateResponse, error)
 	UpdateProduct(updateProduct *entity.Product, tx *sql.Tx) (*entity.Product, error)
 	UpdateMainProduct(newUpdateProduct *webproduct.ProductUpdateRequest, ownerId int) (*webproduct.ProductCreateResponse, error)
-	DeleteProduct(deleteProduct *entity.Product) error
+	DeleteProduct(productId int, tx *sql.Tx) error
 	DeleteProductByStoreId(storeId int, tx *sql.Tx) error
+	DeleteMainProduct(storeId int, ownerId int, productId int) error
 	FindAllProductByStoreIdAndOwnerId(storeId int, ownerId int) ([]entity.Product, error)
 	FindProductByStoreIdOwnerIdProductId(storeId int, ownerId int, productId int) (*entity.Product, error)
 	FindAllProduct() ([]entity.Product, error)
@@ -26,21 +27,44 @@ type productRepository struct {
 }
 
 // DeleteProduct implements ProductRepository
-func (repo *productRepository) DeleteProduct(deleteProduct *entity.Product) error {
+func (repo *productRepository) DeleteProduct(productId int, tx *sql.Tx) error {
 	stmt, err := repo.db.Prepare("UPDATE tbl_product SET is_deleted = true WHERE id = $1")
 	if err != nil {
 		return fmt.Errorf("failed to delete product : %w", err)
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(deleteProduct.Id)
+	_, err = stmt.Exec(productId)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to delete product : %w", err)
+	// }
+	validate(err, "delete product", tx)
+	return nil
+}
+
+func (repo *productRepository) DeleteMainProduct(storeId int, ownerId int, productId int) error {
+	tx, err := repo.db.Begin()
+	if err != nil {
+		panic(err)
+	}
+
+	err = repo.DeleteProduct(productId, tx)
 	if err != nil {
 		return fmt.Errorf("failed to delete product : %w", err)
 	}
 
+	err = repo.productImageRepo.DeleteProductImageByProductId(productId, tx)
+	if err != nil {
+		return fmt.Errorf("failed to delete product image : %w", err)
+	}
+
+	errCommit := tx.Commit()
+	if errCommit != nil {
+		return fmt.Errorf("failed to delete all product : %w", errCommit)
+	}
+
 	return nil
 }
-
 func (repo *productRepository) DeleteProductByStoreId(storeId int, tx *sql.Tx) error {
 	stmt, err := repo.db.Prepare("UPDATE tbl_product SET is_deleted = true WHERE store_id = $1")
 	if err != nil {
@@ -172,7 +196,7 @@ func (repo *productRepository) InsertMainProduct(newProduct *webproduct.ProductC
 	// log.Println(productImages)
 	errCommit := tx.Commit()
 	if errCommit != nil {
-		return nil, fmt.Errorf("failed to create product : %w", errCommit)
+		return nil, fmt.Errorf("failed to create all product : %w", errCommit)
 	}
 
 	productResponse := webproduct.ProductCreateResponse{
@@ -199,7 +223,7 @@ func (repo *productRepository) UpdateProduct(updateProduct *entity.Product, tx *
 	defer stmt.Close()
 
 	// updateAt := time.Now()
-	_, err = stmt.Exec(updateProduct.Id, updateProduct.Name, updateProduct.Price, updateProduct.Stock, updateProduct.Description, updateProduct.ShippingCost, updateProduct.MerkId, updateProduct.StoreId)
+	_, err = stmt.Exec(updateProduct.Name, updateProduct.Price, updateProduct.Stock, updateProduct.Description, updateProduct.ShippingCost, updateProduct.MerkId, updateProduct.StoreId, updateProduct.Id)
 	// if err != nil {
 	// 	return nil, fmt.Errorf("failed to update product : %w", err)
 	// }
@@ -246,7 +270,7 @@ func (repo *productRepository) UpdateMainProduct(newUpdateProduct *webproduct.Pr
 	// log.Println(productImages)
 	errCommit := tx.Commit()
 	if errCommit != nil {
-		return nil, fmt.Errorf("failed to update product : %w", errCommit)
+		return nil, fmt.Errorf("failed to update all product : %w", errCommit)
 	}
 
 	productResponse := webproduct.ProductCreateResponse{

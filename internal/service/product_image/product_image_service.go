@@ -9,7 +9,7 @@ import (
 type ProductImageService interface {
 	// InsertProductImage(newProductImage *entity.ProductImage) (*entity.ProductImage, error)
 	UpdateProductImage(updateProductImage *entity.ProductImage, tx *sql.Tx) (*entity.ProductImage, error)
-	DeleteProductImage(deleteProductImage *entity.ProductImage) error
+	DeleteProductImageByProductId(productId int, tx *sql.Tx) error
 	FindProductImageById(id int) (*entity.ProductImage, error)
 	FindProductImageByName(name string) (*entity.ProductImage, error)
 	FindAllProductImageByProductId(productId int) ([]entity.ProductImage, error)
@@ -20,8 +20,8 @@ type productImageService struct {
 }
 
 // DeleteProductImage implements ProductImageService
-func (s *productImageService) DeleteProductImage(deleteProductImage *entity.ProductImage) error {
-	return s.productImageRepo.DeleteProductImage(deleteProductImage)
+func (s *productImageService) DeleteProductImageByProductId(productId int, tx *sql.Tx) error {
+	return s.productImageRepo.DeleteProductImageByProductId(productId, tx)
 }
 
 // FindAllProductImage implements ProductImageService

@@ -4,7 +4,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"pancakaki/internal/domain/entity"
 	"pancakaki/internal/domain/web"
 	webproduct "pancakaki/internal/domain/web/product"
 	productservice "pancakaki/internal/service/product"
@@ -23,7 +22,7 @@ import (
 type ProductHandler interface {
 	InsertMainProduct(ctx *gin.Context)
 	UpdateMainProduct(ctx *gin.Context)
-	DeleteProduct(ctx *gin.Context)
+	DeleteMainProduct(ctx *gin.Context)
 	FindAllProductByStoreIdAndOwnerId(ctx *gin.Context)
 	FindProductByStoreIdOwnerIdProductId(ctx *gin.Context)
 	FindAllProduct(ctx *gin.Context)
@@ -36,47 +35,43 @@ type productHandler struct {
 }
 
 // DeleteProduct implements ProductHandler
-func (h *productHandler) DeleteProduct(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
+func (h *productHandler) DeleteMainProduct(ctx *gin.Context) {
+	claims := ctx.MustGet("claims").(jwt.MapClaims)
+	ownerId := claims["id"].(string)
+	ownerIdInt, _ := strconv.Atoi(ownerId)
+	role := claims["role"].(string)
+	if role != "owner" {
 		result := web.WebResponse{
-			Code:    http.StatusBadRequest,
-			Status:  "bad request",
-			Message: "bad request",
-			Data:    err.Error(),
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "unauthorized",
+			Data:    "user is unauthorized",
 		}
-		ctx.JSON(http.StatusBadRequest, result)
+		ctx.JSON(http.StatusUnauthorized, result)
 		return
 	}
-	var product entity.Product
-	product.Id = id
 
-	if err := ctx.ShouldBindJSON(&product); err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusInternalServerError,
-			Status:  "status internal server error",
-			Message: "status internal server error",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-	err = h.productService.DeleteProduct(&product)
+	storeId := ctx.Param("storeid")
+	storeIdInt, _ := strconv.Atoi(storeId)
+
+	productId := ctx.Param("productid")
+	productIdInt, _ := strconv.Atoi(productId)
+
+	err := h.productService.DeleteMainProduct(storeIdInt, ownerIdInt, productIdInt)
 	if err != nil {
 		result := web.WebResponse{
 			Code:    http.StatusInternalServerError,
-			Status:  "status internal server error",
+			Status:  "INTERNAL_SERVER_ERROR",
 			Message: "status internal server error",
 			Data:    err.Error(),
 		}
-		ctx.JSON(http.StatusInternalServerError, result)
+		ctx.JSON(http.StatusInternalServerError, result) //buat ngirim respon
 		return
 	}
 	result := web.WebResponse{
 		Code:    http.StatusOK,
-		Status:  "delete success",
-		Message: "success delete product with id " + idParam,
+		Status:  "OK",
+		Message: "success delete product with id " + productId,
 		Data:    err,
 	}
 	ctx.JSON(http.StatusOK, result)

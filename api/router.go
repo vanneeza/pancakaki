@@ -146,6 +146,7 @@ func Run(db *sql.DB) *gin.Engine {
 		owner.GET("/store/:storeid/products", productController.FindAllProductByStoreIdAndOwnerId)
 		owner.GET("/store/:storeid/product/:productid", productController.FindProductByStoreIdOwnerIdProductId)
 		owner.PUT("/store/product", productController.UpdateMainProduct)
+		owner.DELETE("/store/:storeid/product/:productid", productController.DeleteMainProduct)
 	}
 
 	merk := pancakaki.Group("/testaja")
@@ -168,7 +169,7 @@ func Run(db *sql.DB) *gin.Engine {
 		// product.GET("/:id", productController.FindProductById)
 		// product.GET("/name/:name", productController.FindProductByName)
 		// product.PUT("/", productController.UpdateProduct)
-		product.PUT("/:id", productController.DeleteProduct)
+		// product.PUT("/:id", productController.DeleteProduct)
 	}
 
 	productImage := pancakaki.Group("/product-image")
@@ -178,7 +179,7 @@ func Run(db *sql.DB) *gin.Engine {
 		productImage.GET("/:id", productImageController.FindProductImageById)
 		productImage.GET("/name/:name", productImageController.FindProductImageByName)
 		// productImage.PUT("/", productImageController.UpdateProductImage)
-		productImage.PUT("/:id", productImageController.DeleteProductImage)
+		// productImage.PUT("/:id", productImageController.DeleteProductImage)
 	}
 
 	customer := pancakaki.Group("/customers")
