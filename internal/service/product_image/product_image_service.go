@@ -12,6 +12,7 @@ type ProductImageService interface {
 	DeleteProductImage(deleteProductImage *entity.ProductImage) error
 	FindProductImageById(id int) (*entity.ProductImage, error)
 	FindProductImageByName(name string) (*entity.ProductImage, error)
+	FindAllProductImageByProductId(productId int) ([]entity.ProductImage, error)
 	FindAllProductImage() ([]entity.ProductImage, error)
 }
 type productImageService struct {
@@ -36,6 +37,10 @@ func (s *productImageService) FindProductImageById(id int) (*entity.ProductImage
 // FindProductImageByName implements ProductImageService
 func (s *productImageService) FindProductImageByName(name string) (*entity.ProductImage, error) {
 	return s.productImageRepo.FindProductImageByName(name)
+}
+
+func (s *productImageService) FindAllProductImageByProductId(productId int) ([]entity.ProductImage, error) {
+	return s.productImageRepo.FindAllProductImageByProductId(productId)
 }
 
 // InsertProductImage implements ProductImageService

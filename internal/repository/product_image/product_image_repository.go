@@ -127,7 +127,7 @@ func (repo *productImageRepository) InsertProductImage(newProductImage *entity.P
 	// if err != nil {
 	// 	return nil, fmt.Errorf("failed to insert product image : %w", err)
 	// }
-	validate(err, "delete product image", tx)
+	validate(err, "create product image", tx)
 	return newProductImage, nil
 }
 
@@ -143,7 +143,7 @@ func (repo *productImageRepository) UpdateProductImage(updateProductImage *entit
 	// if err != nil {
 	// 	return nil, fmt.Errorf("failed to update product image : %w", err)
 	// }
-	validate(err, "delete product image", tx)
+	validate(err, "update product image", tx)
 	return updateProductImage, nil
 }
 

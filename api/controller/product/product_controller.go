@@ -170,6 +170,18 @@ func (h *productHandler) FindProductByStoreIdOwnerIdProductId(ctx *gin.Context) 
 	productId := ctx.Param("productid")
 	productIdInt, _ := strconv.Atoi(productId)
 
+	getProductImageByProductId, err := h.productImageService.FindAllProductImageByProductId(productIdInt)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "status internal server error",
+			Data:    err.Error(),
+		}
+		ctx.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+		return
+	}
+
 	productByStoreIdOwnerIdProductId, err := h.productService.FindProductByStoreIdOwnerIdProductId(storeIdInt, ownerIdInt, productIdInt)
 	// helper.InternalServerError(err, ctx)
 	if err != nil {
@@ -183,11 +195,22 @@ func (h *productHandler) FindProductByStoreIdOwnerIdProductId(ctx *gin.Context) 
 		return
 	}
 
+	productList := webproduct.ProductCreateResponse{
+		Id:           productIdInt,
+		Name:         productByStoreIdOwnerIdProductId.Name,
+		Price:        productByStoreIdOwnerIdProductId.Price,
+		Stock:        productByStoreIdOwnerIdProductId.Stock,
+		Description:  productByStoreIdOwnerIdProductId.Description,
+		ShippingCost: productByStoreIdOwnerIdProductId.ShippingCost,
+		MerkId:       productByStoreIdOwnerIdProductId.MerkId,
+		StoreId:      productByStoreIdOwnerIdProductId.StoreId,
+		Image:        getProductImageByProductId,
+	}
 	result := web.WebResponse{
 		Code:    http.StatusOK,
 		Status:  "OK",
 		Message: "success get product with id " + productId,
-		Data:    productByStoreIdOwnerIdProductId,
+		Data:    productList,
 	}
 	ctx.JSON(http.StatusOK, result)
 }

@@ -15,7 +15,7 @@ type ProductService interface {
 	UpdateMainProduct(newUpdateProduct *webproduct.ProductUpdateRequest, ownerId int) (*webproduct.ProductCreateResponse, error)
 	DeleteProduct(deleteProduct *entity.Product) error
 	FindAllProductByStoreIdAndOwnerId(storeId int, ownerId int) ([]entity.Product, error)
-	FindProductByStoreIdOwnerIdProductId(storeId int, ownerId int, productId int) (*webproduct.ProductCreateResponse, error)
+	FindProductByStoreIdOwnerIdProductId(storeId int, ownerId int, productId int) (*entity.Product, error)
 	FindAllProduct() ([]entity.Product, error)
 }
 
@@ -56,7 +56,7 @@ func (s *productService) FindAllProductByStoreIdAndOwnerId(storeId int, ownerId 
 }
 
 // FindProductByName implements ProductService
-func (s *productService) FindProductByStoreIdOwnerIdProductId(storeId int, ownerId int, productId int) (*webproduct.ProductCreateResponse, error) {
+func (s *productService) FindProductByStoreIdOwnerIdProductId(storeId int, ownerId int, productId int) (*entity.Product, error) {
 	getStoreByOwnerId, err := s.storeRepo.GetStoreByOwnerId(ownerId)
 	storeIdStr := strconv.Itoa(storeId)
 	if err != nil {

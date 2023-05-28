@@ -16,7 +16,7 @@ type ProductRepository interface {
 	DeleteProduct(deleteProduct *entity.Product) error
 	DeleteProductByStoreId(storeId int, tx *sql.Tx) error
 	FindAllProductByStoreIdAndOwnerId(storeId int, ownerId int) ([]entity.Product, error)
-	FindProductByStoreIdOwnerIdProductId(storeId int, ownerId int, productId int) (*webproduct.ProductCreateResponse, error)
+	FindProductByStoreIdOwnerIdProductId(storeId int, ownerId int, productId int) (*entity.Product, error)
 	FindAllProduct() ([]entity.Product, error)
 }
 
@@ -99,18 +99,15 @@ func (repo *productRepository) FindAllProductByStoreIdAndOwnerId(storeId int, ow
 }
 
 // FindProductByName implements ProductRepository
-func (repo *productRepository) FindProductByStoreIdOwnerIdProductId(storeId int, ownerId int, productId int) (*webproduct.ProductCreateResponse, error) {
-	var product webproduct.ProductCreateResponse
-	var productImage entity.ProductImage
-	stmt, err := repo.db.Prepare(`
-	SELECT tbl_product.id,tbl_product.name,tbl_product.price,tbl_product.stock,tbl_product.description,tbl_product.shipping_cost,tbl_product.merk_id,tbl_product.store_id,tbl_product_image.id,tbl_product_image.image_url
-	FROM tbl_product INNER JOIN tbl_product_image ON tbl_product.id = tbl_product_image.product_id WHERE tbl_product.id = $1`)
+func (repo *productRepository) FindProductByStoreIdOwnerIdProductId(storeId int, ownerId int, productId int) (*entity.Product, error) {
+	var product entity.Product
+	stmt, err := repo.db.Prepare(`SELECT id,name,price,stock,description,shipping_cost,merk_id,store_id FROM tbl_product where id = $1`)
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
-	err = stmt.QueryRow(productId).Scan(&product.Id, &product.Name, &product.Price, &product.Stock, &product.Description, &product.ShippingCost, &product.MerkId, &product.StoreId, &product.Image[productImage.Id].Id, &product.Image[productImage.Id].ImageUrl)
+	err = stmt.QueryRow(productId).Scan(&product.Id, &product.Name, &product.Price, &product.Stock, &product.Description, &product.ShippingCost, &product.MerkId, &product.StoreId)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("product with id %d not found", productId)
 	} else if err != nil {
@@ -206,7 +203,7 @@ func (repo *productRepository) UpdateProduct(updateProduct *entity.Product, tx *
 	// if err != nil {
 	// 	return nil, fmt.Errorf("failed to update product : %w", err)
 	// }
-	validate(err, "create product", tx)
+	validate(err, "update product", tx)
 	return updateProduct, nil
 }
 
