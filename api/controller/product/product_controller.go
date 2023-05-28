@@ -2,7 +2,6 @@ package productcontroller
 
 import (
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"pancakaki/internal/domain/entity"
@@ -397,13 +396,41 @@ func (h *productHandler) UpdateMainProduct(ctx *gin.Context) {
 	productRequest.MerkId = formMerkInt
 	productRequest.StoreId = formStoreInt
 	// productRequest.Image
-	log.Println(formProductImageId)
+	// log.Println(formProductImageId)
 	var productImagesUrl []string
 
-	basepath, _ := os.Getwd()
+	// basepath, _ := os.Getwd()
 	for _, file := range files {
 		// log.Println(file.Filename)
-		fileLocation := filepath.Join(basepath, "document/uploads/products", file.Filename)
+		// fileLocation := filepath.Join(basepath, "document/uploads/products", file.Filename)
+		extension := filepath.Ext(file.Filename)
+		// log.Println(extension)
+		extLower := strings.ToLower(extension)
+		extJpg := strings.Contains(extLower, "jpg")
+		extPng := strings.Contains(extLower, "png")
+		if !extJpg && !extPng {
+			result := web.WebResponse{
+				Code:    http.StatusBadRequest,
+				Status:  "BAD_REQUEST",
+				Message: "extension not supported",
+				Data:    extension,
+			}
+			ctx.JSON(http.StatusBadRequest, result)
+			return
+		}
+
+		var fileLocation string
+		repeat := true
+		for repeat {
+			newFileName := uuid.New().String()
+			fileLocation = filepath.Join("document/uploads/products", newFileName+extension)
+			getProductImageByName, _ := h.productImageService.FindProductImageByName(fileLocation)
+
+			if getProductImageByName == nil {
+				repeat = false
+			}
+		}
+
 		dst, err := os.Create(fileLocation)
 		helper.InternalServerError(err, ctx)
 		if dst != nil {
@@ -438,7 +465,17 @@ func (h *productHandler) UpdateMainProduct(ctx *gin.Context) {
 	}
 
 	productUpdate, err := h.productService.UpdateMainProduct(&productRequest, ownerIdInt)
-	helper.InternalServerError(err, ctx)
+	// helper.InternalServerError(err, ctx)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "status internal server error",
+			Data:    err.Error(),
+		}
+		ctx.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+		return
+	}
 
 	result := web.WebResponse{
 		Code:    http.StatusOK,

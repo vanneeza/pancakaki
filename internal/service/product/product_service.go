@@ -135,33 +135,39 @@ func (s *productService) UpdateMainProduct(newUpdateProduct *webproduct.ProductU
 	if err != nil {
 		return nil, errors.New("product not found")
 	}
+	// log.Println(newUpdateProduct.Id)
 	checkProductId := false
-	for _, v := range getProductByStoreIdAndOwnerId {
-		if v.Id == newUpdateProduct.Id {
+	for _, v1 := range getProductByStoreIdAndOwnerId {
+		// log.Println(v1.Id)
+		if v1.Id == newUpdateProduct.Id {
 			checkProductId = true
+			break
 		}
 	}
+
 	productIdStr := strconv.Itoa(newUpdateProduct.Id)
 	if !checkProductId {
 		return nil, errors.New("product with id " + productIdStr + " is unauthorized")
 	}
 
 	//check product image
+	getProductImageByProductId, err := s.productImageRepo.FindAllProductImageByProductId(newUpdateProduct.Id)
+	// storeIdStr := strconv.Itoa(storeId)
+	if err != nil {
+		return nil, errors.New("product image not found")
+	}
+	checkProductImageId := false
 	for _, v := range newUpdateProduct.Image {
-		getProductImageByProductId, err := s.productImageRepo.FindAllProductImageByProductId(v.ProductId)
-		// storeIdStr := strconv.Itoa(storeId)
-		if err != nil {
-			return nil, errors.New("product image not found")
-		}
-		checkProductId := false
 		for _, v1 := range getProductImageByProductId {
-			if v1.ProductId == v.ProductId {
-				checkProductId = true
+			// log.Println(v.ProductId)
+			if v1.Id == v.Id {
+				checkProductImageId = true
 			}
 		}
-		productIdStr := strconv.Itoa(newUpdateProduct.Id)
-		if !checkProductId {
-			return nil, errors.New("product with id " + productIdStr + " is unauthorized")
+		// log.Println(checkProductId)
+		productIdStr := strconv.Itoa(v.Id)
+		if !checkProductImageId {
+			return nil, errors.New("product image with id " + productIdStr + " is unauthorized")
 		}
 	}
 
