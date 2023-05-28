@@ -68,6 +68,23 @@ func (r *CustomerRepositoryImpl) FindByName(customerName string) (*entity.Custom
 	return &customer, nil
 }
 
+func (r *CustomerRepositoryImpl) FindByNpHp(noHp string) (*entity.Customer, error) {
+	var customer entity.Customer
+	stmt, err := r.Db.Prepare("SELECT id, name, no_hp, address, password, role FROM tbl_customer WHERE no_hp = $1")
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	row := stmt.QueryRow(noHp)
+	err = row.Scan(&customer.Id, &customer.Name, &customer.NoHp, &customer.Address, &customer.Password, &customer.Role)
+	if err != nil {
+		return nil, err
+	}
+
+	return &customer, nil
+}
+
 func (r *CustomerRepositoryImpl) Update(customer *entity.Customer) (*entity.Customer, error) {
 	stmt, err := r.Db.Prepare("UPDATE tbl_customer SET name = $1, no_hp = $2,  address = $3,  password = $4 WHERE id = $5")
 	if err != nil {

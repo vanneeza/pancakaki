@@ -6,26 +6,35 @@ import (
 	"pancakaki/internal/domain/entity"
 	webstore "pancakaki/internal/domain/web/store"
 	bankstorerepository "pancakaki/internal/repository/bank_store"
+	productrepository "pancakaki/internal/repository/product"
+	"strconv"
 )
 
 type StoreRepository interface {
-	GetStoreByOwnerId(id int) (*entity.Store, error)
+	GetStoreByOwnerId(id int) ([]entity.Store, error)
 	GetStoreByName(name string) (*entity.Store, error)
 	CreateStore(newStore *entity.Store, tx *sql.Tx) (*entity.Store, error)
 	CreateMainStore(newTransactionStore *webstore.StoreCreateRequest) (*webstore.StoreCreateResponse, error)
 	UpdateStore(updateStore *entity.Store, tx *sql.Tx) (*entity.Store, error)
-	UpdateMainStore(newUpdateStore *webstore.StoreCreateRequest) (*webstore.StoreCreateResponse, error)
+	UpdateMainStore(newUpdateStore *webstore.StoreUpdateRequest) (*webstore.StoreCreateResponse, error)
+	DeleteStore(id int, tx *sql.Tx) error
+	DeleteMainStore(storeid int, ownerId int) error
 }
 
 type storeRepository struct {
 	db                  *sql.DB
 	bankStoreRepository bankstorerepository.BankStoreRepository
+	productRepository   productrepository.ProductRepository
 }
 
-func NewStoreRepository(db *sql.DB, bankStoreRepository bankstorerepository.BankStoreRepository) StoreRepository {
+func NewStoreRepository(
+	db *sql.DB,
+	bankStoreRepository bankstorerepository.BankStoreRepository,
+	productRepository productrepository.ProductRepository) StoreRepository {
 	return &storeRepository{
 		db:                  db,
 		bankStoreRepository: bankStoreRepository,
+		productRepository:   productRepository,
 	}
 }
 
@@ -34,9 +43,13 @@ func (repo *storeRepository) CreateMainStore(newTransactionStore *webstore.Store
 	if err != nil {
 		panic(err)
 	}
+	newStoreNoHp, err := strconv.Atoi(newTransactionStore.NoHp)
+	if err != nil {
+		return nil, err
+	}
 	newStore := entity.Store{
 		Name:    newTransactionStore.Name,
-		NoHp:    newTransactionStore.NoHp,
+		NoHp:    newStoreNoHp,
 		Email:   newTransactionStore.Email,
 		Address: newTransactionStore.Address,
 		OwnerId: newTransactionStore.OwnerId,
@@ -100,31 +113,26 @@ func (repo *storeRepository) CreateStore(newStore *entity.Store, tx *sql.Tx) (*e
 	return newStore, nil
 }
 
-func validate(err error, message string, tx *sql.Tx) {
-	if err != nil {
-		tx.Rollback()
-		fmt.Println(err, "transaction rollback")
-	} else {
-		fmt.Println("success")
-	}
-}
-
-func (repo *storeRepository) GetStoreByOwnerId(id int) (*entity.Store, error) {
-	var store entity.Store
-	stmt, err := repo.db.Prepare("SELECT id, name,no_hp,email,address,owner_id FROM tbl_store WHERE owner_id = $1")
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-
-	err = stmt.QueryRow(id).Scan(&store.Id, &store.Name, &store.NoHp, &store.Email, &store.Address, &store.OwnerId)
+func (repo *storeRepository) GetStoreByOwnerId(id int) ([]entity.Store, error) {
+	var stores []entity.Store
+	rows, err := repo.db.Query("SELECT id, name,no_hp,email,address,owner_id FROM tbl_store WHERE owner_id = $1", id)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("store with owner_id %d not found", id)
 	} else if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	return &store, nil
+	for rows.Next() {
+		var store entity.Store
+		err := rows.Scan(&store.Id, &store.Name, &store.NoHp, &store.Email, &store.Address, &store.OwnerId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get store : %w", err)
+		}
+		stores = append(stores, store)
+	}
+
+	return stores, nil
 }
 
 func (repo *storeRepository) GetStoreByName(name string) (*entity.Store, error) {
@@ -153,27 +161,31 @@ func (repo *storeRepository) UpdateStore(updateStore *entity.Store, tx *sql.Tx) 
 	defer stmt.Close()
 
 	_, err = stmt.Exec(updateStore.Name, updateStore.NoHp, updateStore.Email, updateStore.Address, updateStore.Id)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to update store : %w", err)
-	// }
+
 	validate(err, "update store", tx)
 
 	return updateStore, nil
 }
 
-func (repo *storeRepository) UpdateMainStore(newUpdateStore *webstore.StoreCreateRequest) (*webstore.StoreCreateResponse, error) {
+func (repo *storeRepository) UpdateMainStore(newUpdateStore *webstore.StoreUpdateRequest) (*webstore.StoreCreateResponse, error) {
 	tx, err := repo.db.Begin()
 	if err != nil {
 		panic(err)
 	}
+	newUpdateStoreNoHp, err := strconv.Atoi(newUpdateStore.NoHp)
+	if err != nil {
+		return nil, err
+	}
 	updateStore := entity.Store{
+		Id:      newUpdateStore.Id,
 		Name:    newUpdateStore.Name,
-		NoHp:    newUpdateStore.NoHp,
+		NoHp:    newUpdateStoreNoHp,
 		Email:   newUpdateStore.Email,
 		Address: newUpdateStore.Address,
 		OwnerId: newUpdateStore.OwnerId,
 	}
 	updateBank := entity.Bank{
+		Id:          newUpdateStore.BankId,
 		Name:        newUpdateStore.BankName,
 		BankAccount: newUpdateStore.BankAccount,
 		AccountName: newUpdateStore.AccountName,
@@ -184,7 +196,7 @@ func (repo *storeRepository) UpdateMainStore(newUpdateStore *webstore.StoreCreat
 		return nil, fmt.Errorf("failed to update store : %w", err)
 	}
 
-	bank, err := repo.bankStoreRepository.UpdateBank(&updateBank, tx)
+	bank, err := repo.bankStoreRepository.UpdateBankStore(&updateBank, tx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update bank : %w", err)
 	}
@@ -204,4 +216,66 @@ func (repo *storeRepository) UpdateMainStore(newUpdateStore *webstore.StoreCreat
 	}
 
 	return &storeRespose, nil
+}
+
+func (repo *storeRepository) DeleteStore(id int, tx *sql.Tx) error {
+	stmt, err := repo.db.Prepare("UPDATE tbl_store SET is_deleted = true WHERE id = $1")
+	if err != nil {
+		return fmt.Errorf("failed to delete store : %w", err)
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(id)
+
+	validate(err, "delete store", tx)
+
+	return nil
+}
+
+func (repo *storeRepository) DeleteMainStore(storeid int, ownerId int) error {
+	tx, err := repo.db.Begin()
+	if err != nil {
+		panic(err)
+	}
+
+	err = repo.DeleteStore(storeid, tx)
+	if err != nil {
+		return fmt.Errorf("failed to delete store : %w", err)
+	}
+
+	getBankStoreByStoreId, err := repo.bankStoreRepository.GetBankStoreByStoreId(storeid)
+	if err != nil {
+		return fmt.Errorf("failed to get bank store : %w", err)
+	}
+	for _, v := range getBankStoreByStoreId {
+		err = repo.bankStoreRepository.DeleteBank(v.Id, tx)
+		if err != nil {
+			return fmt.Errorf("failed to delete bank : %w", err)
+		}
+	}
+
+	err = repo.bankStoreRepository.DeleteBankStore(storeid, tx)
+	if err != nil {
+		return fmt.Errorf("failed to delete bank store : %w", err)
+	}
+
+	err = repo.productRepository.DeleteProductByStoreId(storeid, tx)
+	if err != nil {
+		return fmt.Errorf("failed to delete product : %w", err)
+	}
+
+	errCommit := tx.Commit()
+	if errCommit != nil {
+		return fmt.Errorf("failed to delete store : %w", errCommit)
+	}
+
+	return nil
+}
+func validate(err error, message string, tx *sql.Tx) {
+	if err != nil {
+		tx.Rollback()
+		fmt.Println(err, "transaction rollback")
+	} else {
+		fmt.Println("success")
+	}
 }

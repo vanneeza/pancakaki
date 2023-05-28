@@ -9,6 +9,7 @@ type Owner struct {
 	Email        string `json:"email"`
 	Password     string `json:"password"`
 	MembershipId int    `json:"membership_id"`
+	Role         string `json:"role"`
 }
 
 type TransactionOwner struct {

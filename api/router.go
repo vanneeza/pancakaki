@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	admincontroller "pancakaki/api/controller/admin"
 	customercontroller "pancakaki/api/controller/customer"
+	logincontroller "pancakaki/api/controller/login"
 	membershipcontroller "pancakaki/api/controller/membership"
 	merkcontroller "pancakaki/api/controller/merk"
 	ownercontroller "pancakaki/api/controller/owner"
@@ -53,25 +54,25 @@ func Run(db *sql.DB) *gin.Engine {
 	bankService := bankservice.NewBankService(bankRepository)
 	bankStoreRepository := bankstorerepository.NewBankStoreRepository(db)
 
-	ownerRepository := ownerrepository.NewOwnerRepository(db)
-	ownerService := ownerservice.NewOwnerService(ownerRepository)
-	ownerController := ownercontroller.NewOwnerHandler(ownerService, membershipService, bankService)
-
-	storeRepository := storerepository.NewStoreRepository(db, bankStoreRepository)
-	storeService := storeservice.NewStoreService(storeRepository)
-	storeController := storecontroller.NewStoreHandler(storeService, ownerService)
-
-	productRepository := productrepository.NewProductRepository(db)
-	productService := productservice.NewProductService(productRepository)
-	productController := productcontroller.NewProductHandler(productService, storeService)
-
-	///////////-----------------------------------------------------------------------------------------------------------////////////////////
-
 	customerRepository := customerrepository.NewCustomerRepository(db)
 	bankRepoCha := bankrepository.NewBankRepository(db)
 
 	customerService := customerservice.NewCustomerService(customerRepository)
 	customerController := customercontroller.NewCustomerController(customerService)
+
+	ownerRepository := ownerrepository.NewOwnerRepository(db)
+	ownerService := ownerservice.NewOwnerService(ownerRepository, customerRepository)
+	ownerController := ownercontroller.NewOwnerHandler(ownerService, membershipService, bankService)
+
+	productRepository := productrepository.NewProductRepository(db, productImageRepository)
+	storeRepository := storerepository.NewStoreRepository(db, bankStoreRepository, productRepository)
+	storeService := storeservice.NewStoreService(storeRepository, bankRepository)
+	storeController := storecontroller.NewStoreHandler(storeService, ownerService)
+
+	productService := productservice.NewProductService(productRepository, productImageRepository, storeRepository)
+	productController := productcontroller.NewProductHandler(productService, storeService, productImageService)
+
+	///////////-----------------------------------------------------------------------------------------------------------////////////////////
 
 	membershipRepositoryCha := membershiprepository.NewMembershipRepository(db)
 	membershipServiceCHa := membershipservice.NewMembershipService(membershipRepositoryCha)
@@ -81,11 +82,10 @@ func Run(db *sql.DB) *gin.Engine {
 	adminService := adminservice.NewAdminService(adminRepository, bankRepoCha, ownerRepository, customerRepository)
 	adminController := admincontroller.NewAdminController(adminService)
 
+	loginController := logincontroller.NewLoginController(ownerService, customerService)
+
 	var jwtKey = "secret_key"
 	pancakaki := r.Group("pancakaki/v1/")
-
-	pancakaki.POST("/login", ownerController.LoginOwner)
-	pancakaki.POST("/", ownerController.CreateOwner)
 
 	pancakaki.GET("admins/", adminController.ViewAll)
 	admin := pancakaki.Group("/admin")
@@ -124,18 +124,28 @@ func Run(db *sql.DB) *gin.Engine {
 		admin.DELETE("/merk/:id", merkcontroller.Unreg)
 	}
 
+	pancakaki.POST("/login", loginController.Login)
+
+	pancakaki.POST("/register/owner", ownerController.CreateOwner)
+	pancakaki.GET("/ownerhp/:hp", ownerController.GetOwnerByNoHp)
+
 	owner := pancakaki.Group("/owner")
 	owner.Use(helper.AuthMiddleware(jwtKey))
 	{
 		//owner
-		owner.GET("/:ownername/profile", ownerController.GetOwnerById)
-		owner.PUT("/:ownername/profile", ownerController.UpdateOwner)
-		owner.PUT("/:ownername/profile/:id", ownerController.DeleteOwner)
+		owner.GET("/profile", ownerController.GetOwnerById)
+		owner.PUT("/profile", ownerController.UpdateOwner)
+		owner.DELETE("/profile", ownerController.DeleteOwner)
 		//store
-		owner.POST("/:ownername/store", storeController.CreateMainStore)
-		owner.POST("/:ownername/store/storename", storeController.UpdateMainStore)
-		owner.POST("/:ownername/store/:storename/product", productController.InsertProduct)
-
+		owner.GET("/store", storeController.GetStoreByOwnerId)
+		owner.POST("/store", storeController.CreateMainStore)
+		owner.PUT("/store", storeController.UpdateMainStore)
+		owner.DELETE("/store/:storeid", storeController.DeleteMainStore)
+		//product
+		owner.POST("/store/product", productController.InsertMainProduct)
+		owner.GET("/store/:storeid/products", productController.FindAllProductByStoreIdAndOwnerId)
+		owner.GET("/store/:storeid/product/:productid", productController.FindProductByStoreIdOwnerIdProductId)
+		owner.PUT("/store/product", productController.UpdateMainProduct)
 	}
 
 	merk := pancakaki.Group("/testaja")
@@ -153,25 +163,26 @@ func Run(db *sql.DB) *gin.Engine {
 
 	product := pancakaki.Group("/products")
 	{
-		product.POST("/", productController.InsertProduct)
+		product.POST("/", productController.InsertMainProduct)
 		product.GET("/", productController.FindAllProduct)
-		product.GET("/:id", productController.FindProductById)
-		product.GET("/name/:name", productController.FindProductByName)
-		product.PUT("/", productController.UpdateProduct)
+		// product.GET("/:id", productController.FindProductById)
+		// product.GET("/name/:name", productController.FindProductByName)
+		// product.PUT("/", productController.UpdateProduct)
 		product.PUT("/:id", productController.DeleteProduct)
 	}
 
 	productImage := pancakaki.Group("/product-image")
 	{
-		productImage.POST("/:id", productImageController.InsertProductImage)
+		productImage.POST("/", productImageController.InsertProductImage)
 		productImage.GET("/", productImageController.FindAllProductImage)
 		productImage.GET("/:id", productImageController.FindProductImageById)
 		productImage.GET("/name/:name", productImageController.FindProductImageByName)
-		productImage.PUT("/", productImageController.UpdateProductImage)
+		// productImage.PUT("/", productImageController.UpdateProductImage)
 		productImage.PUT("/:id", productImageController.DeleteProductImage)
 	}
 
 	customer := pancakaki.Group("/customers")
+	customer.Use(helper.AuthMiddleware(jwtKey))
 	{
 		customer.POST("/", customerController.Register)
 		customer.GET("/", customerController.ViewAll)

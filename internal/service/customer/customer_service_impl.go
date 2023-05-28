@@ -1,6 +1,7 @@
 package customerservice
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"pancakaki/internal/domain/entity"
@@ -70,6 +71,25 @@ func (customerService *CustomerServiceImpl) ViewOne(customerName string) (webcus
 		NoHp:     customer.NoHp,
 		Address:  customer.Address,
 		Password: customer.Password,
+	}
+
+	return customerResponse, nil
+}
+
+func (customerService *CustomerServiceImpl) ViewByNoHp(noHp string) (webcustomer.CustomerResponse, error) {
+	var customerResponses webcustomer.CustomerResponse
+	customer, err := customerService.CustomerRepository.FindByNpHp(noHp)
+	if err != nil {
+		return customerResponses, errors.New("user with no hp " + noHp + " not found")
+	}
+
+	customerResponse := webcustomer.CustomerResponse{
+		Id:       customer.Id,
+		Name:     customer.Name,
+		NoHp:     customer.NoHp,
+		Address:  customer.Address,
+		Password: customer.Password,
+		Role:     customer.Role,
 	}
 
 	return customerResponse, nil

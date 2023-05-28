@@ -2,6 +2,7 @@ package helper
 
 import (
 	"net/http"
+	"pancakaki/internal/domain/web"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,7 +15,39 @@ func PanicErr(err error) {
 
 func InternalServerError(err error, context *gin.Context) {
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()}) //buat ngirim respon
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "status internal server error",
+			Data:    err.Error(),
+		}
+		context.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+		return
+	}
+}
+
+func StatusBadRequest(err error, context *gin.Context) {
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusBadRequest,
+			Status:  "BAD_REQUEST",
+			Message: "bad request",
+			Data:    err.Error(),
+		}
+		context.JSON(http.StatusBadRequest, result) //buat ngirim respon
+		return
+	}
+}
+
+func StatusNotFound(err error, context *gin.Context) {
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusNotFound,
+			Status:  "NOT_FOUND",
+			Message: "not found",
+			Data:    err.Error(),
+		}
+		context.JSON(http.StatusNotFound, result) //buat ngirim respon
 		return
 	}
 }

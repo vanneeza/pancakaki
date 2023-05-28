@@ -4,7 +4,7 @@ type Product struct {
 	Id           int
 	Name         string
 	Price        int
-	Stock        int16
+	Stock        int
 	Description  string
 	ShippingCost int
 	MerkId       int

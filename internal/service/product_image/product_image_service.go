@@ -1,13 +1,14 @@
 package productimageservice
 
 import (
+	"database/sql"
 	"pancakaki/internal/domain/entity"
 	productimagerepository "pancakaki/internal/repository/product_image"
 )
 
 type ProductImageService interface {
-	InsertProductImage(newProductImage *entity.ProductImage) (*entity.ProductImage, error)
-	UpdateProductImage(updateProductImage *entity.ProductImage) (*entity.ProductImage, error)
+	// InsertProductImage(newProductImage *entity.ProductImage) (*entity.ProductImage, error)
+	UpdateProductImage(updateProductImage *entity.ProductImage, tx *sql.Tx) (*entity.ProductImage, error)
 	DeleteProductImage(deleteProductImage *entity.ProductImage) error
 	FindProductImageById(id int) (*entity.ProductImage, error)
 	FindProductImageByName(name string) (*entity.ProductImage, error)
@@ -38,13 +39,13 @@ func (s *productImageService) FindProductImageByName(name string) (*entity.Produ
 }
 
 // InsertProductImage implements ProductImageService
-func (s *productImageService) InsertProductImage(newProductImage *entity.ProductImage) (*entity.ProductImage, error) {
-	return s.productImageRepo.InsertProductImage(newProductImage)
-}
+// func (s *productImageService) InsertProductImage(newProductImage *entity.ProductImage) (*entity.ProductImage, error) {
+// 	return s.productImageRepo.InsertProductImage(newProductImage)
+// }
 
 // UpdateProductImage implements ProductImageService
-func (s *productImageService) UpdateProductImage(updateProductImage *entity.ProductImage) (*entity.ProductImage, error) {
-	return s.productImageRepo.UpdateProductImage(updateProductImage)
+func (s *productImageService) UpdateProductImage(updateMainProductImage *entity.ProductImage, tx *sql.Tx) (*entity.ProductImage, error) {
+	return s.productImageRepo.UpdateProductImage(updateMainProductImage, tx)
 }
 
 func NewProductImageService(productImageRepo productimagerepository.ProductImageRepository) ProductImageService {
