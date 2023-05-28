@@ -4,16 +4,18 @@ import (
 	"database/sql"
 	"fmt"
 	"pancakaki/internal/domain/entity"
+	"strconv"
 )
 
 type OwnerRepository interface {
 	CreateOwner(newOwner *entity.Owner) (*entity.Owner, error)
-	GetOwnerByName(name string) (*entity.Owner, error)
+	GetOwnerByNoHp(noHp string) (*entity.Owner, error)
 	GetOwnerById(id int) (*entity.Owner, error)
 	GetOwnerByEmail(email string) (*entity.Owner, error)
 	GetTaxAndStoreOwner(productId int) (string, float64, error)
 	UpdateOwner(updateOwner *entity.Owner) (*entity.Owner, error)
 	DeleteOwner(id int) error
+	// UpdateMembershipOwner(id int)
 }
 
 type ownerRepository struct {
@@ -27,7 +29,12 @@ func (repo *ownerRepository) CreateOwner(newOwner *entity.Owner) (*entity.Owner,
 	}
 	defer stmt.Close()
 
-	err = stmt.QueryRow(newOwner.Name, newOwner.NoHp, newOwner.Email, newOwner.Password, newOwner.MembershipId).Scan(&newOwner.Id)
+	ownerNoHp, err := strconv.ParseInt(newOwner.NoHp, 10, 64)
+	// ownerNoHp1, err := strconv.Atoi(newOwner.NoHp)
+	if err != nil {
+		return nil, err
+	}
+	err = stmt.QueryRow(newOwner.Name, ownerNoHp, newOwner.Email, newOwner.Password, newOwner.MembershipId).Scan(&newOwner.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create owner : %w", err)
 	}
@@ -35,17 +42,17 @@ func (repo *ownerRepository) CreateOwner(newOwner *entity.Owner) (*entity.Owner,
 	return newOwner, nil
 }
 
-func (repo *ownerRepository) GetOwnerByName(name string) (*entity.Owner, error) {
+func (repo *ownerRepository) GetOwnerByNoHp(noHp string) (*entity.Owner, error) {
 	var owner entity.Owner
-	stmt, err := repo.db.Prepare("SELECT id,name,no_hp,email,password,membership_id FROM tbl_owner WHERE name = $1")
+	stmt, err := repo.db.Prepare("SELECT id,name,no_hp,email,password,membership_id, role FROM tbl_owner WHERE no_hp = $1")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
-	err = stmt.QueryRow(name).Scan(&owner.Id, &owner.Name, &owner.NoHp, &owner.Email, &owner.Password, &owner.MembershipId)
+	err = stmt.QueryRow(noHp).Scan(&owner.Id, &owner.Name, &owner.NoHp, &owner.Email, &owner.Password, &owner.MembershipId, &owner.Role)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("owner with name %s not found", name)
+		return nil, fmt.Errorf("owner with no hp %s not found", noHp)
 	} else if err != nil {
 		return nil, err
 	}
@@ -55,13 +62,13 @@ func (repo *ownerRepository) GetOwnerByName(name string) (*entity.Owner, error) 
 
 func (repo *ownerRepository) GetOwnerById(id int) (*entity.Owner, error) {
 	var owner entity.Owner
-	stmt, err := repo.db.Prepare("SELECT id,name,no_hp,email,password,membership_id FROM tbl_owner WHERE id = $1")
+	stmt, err := repo.db.Prepare("SELECT id,name,no_hp,email,password,membership_id,role FROM tbl_owner WHERE id = $1")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
-	err = stmt.QueryRow(id).Scan(&owner.Id, &owner.Name, &owner.NoHp, &owner.Email, &owner.Password, &owner.MembershipId)
+	err = stmt.QueryRow(id).Scan(&owner.Id, &owner.Name, &owner.NoHp, &owner.Email, &owner.Password, &owner.MembershipId, &owner.Role)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("owner with id %d not found", id)
 	} else if err != nil {

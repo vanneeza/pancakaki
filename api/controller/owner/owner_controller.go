@@ -1,8 +1,6 @@
 package ownercontroller
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 	"pancakaki/internal/domain/entity"
 	"pancakaki/internal/domain/web"
@@ -23,9 +21,9 @@ var jwtKey = "secret_key"
 type OwnerHandler interface {
 	CreateOwner(ctx *gin.Context)
 	GetOwnerById(ctx *gin.Context)
+	GetOwnerByNoHp(ctx *gin.Context)
 	UpdateOwner(ctx *gin.Context)
 	DeleteOwner(ctx *gin.Context)
-	LoginOwner(ctx *gin.Context)
 }
 
 type ownerHandler struct {
@@ -37,43 +35,50 @@ type ownerHandler struct {
 func (h *ownerHandler) CreateOwner(ctx *gin.Context) {
 	var owner entity.Owner
 
-	if err := ctx.ShouldBindJSON(&owner); err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusBadRequest,
-			Status:  "bad request",
-			Message: "bad request",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusBadRequest, result)
-		return
-	}
+	err := ctx.ShouldBindJSON(&owner)
+	helper.StatusBadRequest(err, ctx)
+
 	getMembershipById, err := h.membershipService.ViewOne(owner.MembershipId)
 	helper.InternalServerError(err, ctx)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "status internal server error",
+			Data:    err.Error(),
+		}
+		ctx.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+		return
+	}
 
 	// bANK
-	// getBankAdminById, err := h.bankService.(1)
-	// if err != nil {
-	// 	result := web.WebResponse{
-	// 		Code:    http.StatusInternalServerError,
-	// 		Status:  "status internal server error",
-	// 		Message: "status internal server error",
-	// 		Data:    err.Error(),
-	// 	}
-	// 	ctx.JSON(http.StatusInternalServerError, result)
-	// 	return
-	// }
+	getBankAdminById, err := h.bankService.GetBankAdminById(1)
+	helper.InternalServerError(err, ctx)
 
 	// fmt.Println(getBankAdminById)
 
 	newOwner, err := h.ownerService.CreateOwner(&owner)
 	helper.InternalServerError(err, ctx)
-
+	// if err != nil {
+	// 	result := web.WebResponse{
+	// 		Code:    http.StatusInternalServerError,
+	// 		Status:  "INTERNAL_SERVER_ERROR",
+	// 		Message: "status internal server error",
+	// 		Data:    err.Error(),
+	// 	}
+	// 	ctx.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+	// 	return
+	// }
+	getOwnerById, err := h.ownerService.GetOwnerById(newOwner.Id)
+	helper.InternalServerError(err, ctx)
+	// newOwnerId := strconv.Itoa(newOwner.Id)
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	claims := token.Claims.(jwt.MapClaims)
-	claims["ownerId"] = strconv.Itoa(newOwner.Id)
-	claims["nohp"] = owner.NoHp
-	claims["exp"] = time.Now().Add(time.Minute * 1).Unix()
+	claims["id"] = strconv.Itoa(newOwner.Id)
+	claims["role"] = getOwnerById.Role
+	claims["nohp"] = getOwnerById.NoHp
+	claims["exp"] = time.Now().Add(time.Minute * 5).Unix()
 
 	var jwtKeyByte = []byte(jwtKey)
 	tokenString, err := token.SignedString(jwtKeyByte)
@@ -87,276 +92,149 @@ func (h *ownerHandler) CreateOwner(ctx *gin.Context) {
 		Password:        owner.Password,
 		MembershipName:  getMembershipById.Name,
 		MembershipPrice: getMembershipById.Price,
+		Bank:            getBankAdminById,
 		Token:           tokenString,
 	}
 	result := web.WebResponse{
 		Code:    http.StatusCreated,
-		Status:  "success create owner",
+		Status:  "CREATED",
 		Message: "success create owner",
 		Data:    resultOwner,
 	}
 	ctx.JSON(http.StatusCreated, result)
 }
 
-func (h *ownerHandler) LoginOwner(ctx *gin.Context) {
-	var owner entity.Owner
-
-	if err := ctx.ShouldBindJSON(&owner); err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusInternalServerError,
-			Status:  "status internal server error",
-			Message: "status internal server error",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-
-	ownerEmail := owner.Email
-	getOwnerByEmail, err := h.ownerService.GetOwnerByEmail(ownerEmail)
-	helper.InternalServerError(err, ctx)
-
-	if getOwnerByEmail == nil {
-		result := web.WebResponse{
-			Code:    http.StatusNotFound,
-			Status:  "status not found",
-			Message: "status not found",
-			Data:    "owner with email " + ownerEmail + " not found",
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-	if ownerEmail != getOwnerByEmail.Email {
-		result := web.WebResponse{
-			Code:    http.StatusBadRequest,
-			Status:  "bad request",
-			Message: "bad request",
-			Data:    "wrong email",
-		}
-		ctx.JSON(http.StatusBadRequest, result)
-		return
-	}
-
-	ownerPassword := owner.Password
-	match := helper.CheckPasswordHash(ownerPassword, getOwnerByEmail.Password)
-	if !match {
-		result := web.WebResponse{
-			Code:    http.StatusBadRequest,
-			Status:  "bad request",
-			Message: "bad request",
-			Data:    "wrong password",
-		}
-		ctx.JSON(http.StatusBadRequest, result)
-		return
-	}
-
-	token := jwt.New(jwt.SigningMethodHS256)
-
-	claims := token.Claims.(jwt.MapClaims)
-
-	claims["ownerId"] = strconv.Itoa(getOwnerByEmail.Id)
-	claims["nohp"] = getOwnerByEmail.NoHp
-	claims["exp"] = time.Now().Add(time.Minute * 1).Unix()
-
-	var jwtKeyByte = []byte(jwtKey)
-	tokenString, err := token.SignedString(jwtKeyByte)
-
-	result := web.WebResponse{
-		Code:    http.StatusOK,
-		Status:  "login success",
-		Message: "success login owner with email " + getOwnerByEmail.Email,
-		Data:    tokenString,
-	}
-	ctx.JSON(http.StatusOK, result)
-
-}
-
 func (h *ownerHandler) GetOwnerById(ctx *gin.Context) {
 	claims := ctx.MustGet("claims").(jwt.MapClaims)
-	username := claims["ownerId"].(string)
-	ownerName := ctx.Param("ownername")
+	ownerId := claims["id"].(string)
+	ownerIdInt, _ := strconv.Atoi(ownerId)
 
-	log.Println(username, "Ownername Id")
-	fmt.Scanln()
-
-	getOwnerByName, err := h.ownerService.GetOwnerByName(ownerName)
-	helper.InternalServerError(err, ctx)
-	if getOwnerByName == nil {
+	role := claims["role"].(string)
+	// fmt.Println(role)
+	if role != "owner" {
 		result := web.WebResponse{
-			Code:    http.StatusNotFound,
-			Status:  "status not found",
-			Message: "status not found",
-			Data:    "owner with name " + ownerName + " not found",
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "unauthorized",
+			Data:    "user is unauthorized",
 		}
-		ctx.JSON(http.StatusInternalServerError, result)
+		ctx.JSON(http.StatusUnauthorized, result)
 		return
 	}
-
-	claims = ctx.MustGet("claims").(jwt.MapClaims)
-	ownerId := claims["ownerId"].(string)
-	ownerIdInt, _ := strconv.Atoi(ownerId)
 
 	ownerById, err := h.ownerService.GetOwnerById(ownerIdInt)
 	helper.InternalServerError(err, ctx)
 
-	if getOwnerByName.Id != ownerIdInt {
-		result := web.WebResponse{
-			Code:    http.StatusConflict,
-			Status:  "status conflict",
-			Message: "status conflict",
-			Data:    "owner with name " + ownerName + " is unauthorized",
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-
 	result := web.WebResponse{
 		Code:    http.StatusOK,
-		Status:  "get by id success",
+		Status:  "OK",
 		Message: "success get owner with id " + ownerId,
 		Data:    ownerById,
 	}
 	ctx.JSON(http.StatusOK, result)
 }
 
-func (h *ownerHandler) UpdateOwner(ctx *gin.Context) {
-	// idParam := ctx.Param("id")
-	// id, err := strconv.Atoi(idParam)
-	// if err != nil {
-	// 	result := web.WebResponse{
-	// 		Code:    http.StatusBadRequest,
-	// 		Status:  "bad request",
-	// 		Message: "bad request",
-	// 		Data:    err.Error(),
-	// 	}
-	// 	ctx.JSON(http.StatusBadRequest, result)
-	// 	return
-	// }
+func (h *ownerHandler) GetOwnerByNoHp(ctx *gin.Context) {
+	// var owner entity.Owner
+	// err := ctx.ShouldBindJSON(&owner)
+	hp := ctx.Param("hp")
+	// storeIdInt, _ := strconv.Atoi(storeId)
+	// helper.InternalServerError(err, ctx)
 
-	ownerName := ctx.Param("ownername")
-	getOwnerByName, err := h.ownerService.GetOwnerByName(ownerName)
+	ownerByNoHp, err := h.ownerService.GetOwnerByNoHp(hp)
 	helper.InternalServerError(err, ctx)
-	if getOwnerByName == nil {
-		result := web.WebResponse{
-			Code:    http.StatusNotFound,
-			Status:  "status not found",
-			Message: "status not found",
-			Data:    "owner with name " + ownerName + " not found",
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
 
+	result := web.WebResponse{
+		Code:    http.StatusOK,
+		Status:  "OK",
+		Message: "success get owner with hp " + hp,
+		Data:    ownerByNoHp,
+	}
+	ctx.JSON(http.StatusOK, result)
+}
+func (h *ownerHandler) UpdateOwner(ctx *gin.Context) {
 	claims := ctx.MustGet("claims").(jwt.MapClaims)
-	ownerId := claims["ownerId"].(string)
+	ownerId := claims["id"].(string)
 	ownerIdInt, _ := strconv.Atoi(ownerId)
 
-	if getOwnerByName.Id != ownerIdInt {
+	role := claims["role"].(string)
+	if role != "owner" {
 		result := web.WebResponse{
-			Code:    http.StatusConflict,
-			Status:  "status conflict",
-			Message: "status conflict",
-			Data:    "owner with name " + ownerName + " is unauthorized",
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "unauthorized",
+			Data:    "user is unauthorized",
 		}
-		ctx.JSON(http.StatusInternalServerError, result)
+		ctx.JSON(http.StatusUnauthorized, result)
 		return
 	}
 
 	var owner entity.Owner
 
-	if err := ctx.ShouldBindJSON(&owner); err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusInternalServerError,
-			Status:  "status internal server error",
-			Message: "status internal server error",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
+	err := ctx.ShouldBindJSON(&owner)
+	helper.InternalServerError(err, ctx)
+
+	var statusMembership []entity.Bank
+	getMembershipOwnerById, err := h.ownerService.GetOwnerById(ownerIdInt)
+	helper.InternalServerError(err, ctx)
+
+	if owner.MembershipId != getMembershipOwnerById.MembershipId {
+		getBankAdminById, err := h.bankService.GetBankAdminById(1)
+		helper.InternalServerError(err, ctx)
+		statusMembership = getBankAdminById
+	} else {
+		statusMembership = nil
 	}
-	if owner.Id != ownerIdInt {
-		ownerIdJson := strconv.Itoa(owner.Id)
-		result := web.WebResponse{
-			Code:    http.StatusConflict,
-			Status:  "status conflict",
-			Message: "status conflict",
-			Data:    "owner with id " + ownerIdJson + " is unauthorized",
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
+
+	getMembershipById, err := h.membershipService.ViewOne(owner.MembershipId)
+	helper.InternalServerError(err, ctx)
 
 	owner.Id = ownerIdInt
 	ownerUpdate, err := h.ownerService.UpdateOwner(&owner)
 	helper.InternalServerError(err, ctx)
+
+	resultOwner := webowner.OwnerUpdateResponse{
+		Id:              owner.Id,
+		Name:            ownerUpdate.Name,
+		NoHp:            ownerUpdate.NoHp,
+		Email:           ownerUpdate.Email,
+		Password:        ownerUpdate.Password,
+		MembershipName:  getMembershipById.Name,
+		MembershipPrice: getMembershipById.Price,
+		Bank:            statusMembership,
+	}
+
 	result := web.WebResponse{
 		Code:    http.StatusOK,
-		Status:  "update success",
+		Status:  "OK",
 		Message: "success update owner with id " + ownerId,
-		Data:    ownerUpdate,
+		Data:    resultOwner,
 	}
 	ctx.JSON(http.StatusOK, result)
 }
 
 func (h *ownerHandler) DeleteOwner(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		result := web.WebResponse{
-			Code:    http.StatusBadRequest,
-			Status:  "bad request",
-			Message: "bad request",
-			Data:    err.Error(),
-		}
-		ctx.JSON(http.StatusBadRequest, result)
-		return
-	}
-
-	ownerName := ctx.Param("ownername")
-	getOwnerByName, err := h.ownerService.GetOwnerByName(ownerName)
-	helper.InternalServerError(err, ctx)
-	if getOwnerByName == nil {
-		result := web.WebResponse{
-			Code:    http.StatusNotFound,
-			Status:  "status not found",
-			Message: "status not found",
-			Data:    "owner with name " + ownerName + " not found",
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-
 	claims := ctx.MustGet("claims").(jwt.MapClaims)
 	ownerId := claims["ownerId"].(string)
 	ownerIdInt, _ := strconv.Atoi(ownerId)
 
-	if getOwnerByName.Id != ownerIdInt {
+	role := claims["role"].(string)
+	if role != "owner" {
 		result := web.WebResponse{
-			Code:    http.StatusConflict,
-			Status:  "status conflict",
-			Message: "status conflict",
-			Data:    "owner with name " + ownerName + " is unauthorized",
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "unauthorized",
+			Data:    "user is unauthorized",
 		}
-		ctx.JSON(http.StatusInternalServerError, result)
+		ctx.JSON(http.StatusUnauthorized, result)
 		return
 	}
 
-	if id != ownerIdInt {
-		result := web.WebResponse{
-			Code:    http.StatusConflict,
-			Status:  "status conflict",
-			Message: "status conflict",
-			Data:    "owner with id " + idParam + " is unauthorized",
-		}
-		ctx.JSON(http.StatusInternalServerError, result)
-		return
-	}
-
-	err = h.ownerService.DeleteOwner(ownerIdInt)
+	err := h.ownerService.DeleteOwner(ownerIdInt)
 	helper.InternalServerError(err, ctx)
 	result := web.WebResponse{
 		Code:    http.StatusOK,
-		Status:  "delete success",
+		Status:  "OK",
 		Message: "success delete owner with id " + ownerId,
 		Data:    err,
 	}

@@ -8,6 +8,7 @@ import (
 	"pancakaki/utils/helper"
 	"strconv"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -56,6 +57,22 @@ func (customerController *CustomerControllerImpl) ViewAll(context *gin.Context) 
 }
 
 func (customerController *CustomerControllerImpl) ViewOne(context *gin.Context) {
+
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	// customerId := claims["id"].(string)
+	// customerIdInt, _ := strconv.Atoi(customerId)
+	role := claims["role"].(string)
+	if role != "customer" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "unauthorized",
+			Data:    "user is unauthorized",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
+
 	customerName := context.Param("name")
 	customerResponse, err := customerController.customerService.ViewOne(customerName)
 	helper.InternalServerError(err, context)

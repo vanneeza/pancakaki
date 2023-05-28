@@ -168,7 +168,7 @@ func (transactionService *TransactionServiceImpl) CustomerPayment(req webtransac
 
 	product, _ := transactionService.ProductRepository.FindProductById(productId)
 
-	productStock := product.Stock - int16(qty)
+	productStock := product.Stock - qty
 	stock := entity.Product{
 		Id:    productId,
 		Stock: productStock,

@@ -9,6 +9,7 @@ type Customer struct {
 	Address  string
 	Password string
 	IsDelete bool
+	Role     string
 }
 
 type TransactionCustomer struct {
