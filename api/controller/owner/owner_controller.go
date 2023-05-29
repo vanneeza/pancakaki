@@ -36,7 +36,17 @@ func (h *ownerHandler) CreateOwner(ctx *gin.Context) {
 	var owner entity.Owner
 
 	err := ctx.ShouldBindJSON(&owner)
-	helper.StatusBadRequest(err, ctx)
+	// helper.StatusBadRequest(err, ctx)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusBadRequest,
+			Status:  "BAD_REQUEST",
+			Message: "bad request",
+			Data:    err.Error(),
+		}
+		ctx.JSON(http.StatusBadRequest, result)
+		return
+	}
 
 	getMembershipById, err := h.membershipService.ViewOne(owner.MembershipId)
 	helper.InternalServerError(err, ctx)
@@ -58,17 +68,17 @@ func (h *ownerHandler) CreateOwner(ctx *gin.Context) {
 	// fmt.Println(getBankAdminById)
 
 	newOwner, err := h.ownerService.CreateOwner(&owner)
-	helper.InternalServerError(err, ctx)
-	// if err != nil {
-	// 	result := web.WebResponse{
-	// 		Code:    http.StatusInternalServerError,
-	// 		Status:  "INTERNAL_SERVER_ERROR",
-	// 		Message: "status internal server error",
-	// 		Data:    err.Error(),
-	// 	}
-	// 	ctx.JSON(http.StatusInternalServerError, result) //buat ngirim respon
-	// 	return
-	// }
+	// helper.InternalServerError(err, ctx)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "status internal server error",
+			Data:    err.Error(),
+		}
+		ctx.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+		return
+	}
 	getOwnerById, err := h.ownerService.GetOwnerById(newOwner.Id)
 	helper.InternalServerError(err, ctx)
 	// newOwnerId := strconv.Itoa(newOwner.Id)

@@ -11,14 +11,13 @@ import (
 
 var dummyMerk = []entity.Merk{
 	{
-		Id:        1,
-		Name:      "nokia",
-		IsDeleted: false,
+		Id:   1,
+		Name: "nokia",
 	},
 	{
-		Id:        2,
-		Name:      "samsung",
-		IsDeleted: false,
+		Id:   2,
+		Name: "samsung",
+		// IsDeleted: false,
 	},
 }
 
@@ -211,9 +210,9 @@ func (suite *MerkRepositoryTestSuite) TestMerkRepository_DeleteMerk_Success() {
 func (suite *MerkRepositoryTestSuite) TestMerkRepository_DeleteMerk_Failed() {
 	// rows := sqlmock.NewRows([]string{"id", "name"})
 	// rows.AddRow(dummyMerk[0].Id, dummyMerk[0].Name)
-	query := "UPDATE tbl_merk SET is_deleted = \\? WHERE id = \\?"
+	query := "UPDATE tbl_merk SET is_deleted = ture WHERE id = \\?"
 	prep := suite.sqlMock.ExpectPrepare(query)
-	prep.ExpectExec().WithArgs(dummyMerk[0].IsDeleted, dummyMerk[0].Id).WillReturnResult(sqlmock.NewResult(0, 0))
+	prep.ExpectExec().WithArgs(dummyMerk[0].Id).WillReturnResult(sqlmock.NewResult(0, 0))
 	// suite.sqlMock.ExpectPrepare("UPDATE tbl_merk").ExpectQuery().WithArgs(dummyMerk[0].Id).
 
 	repo := NewMerkRepository(suite.dbMock)
@@ -246,7 +245,7 @@ func (suite *MerkRepositoryTestSuite) TestMerkRepository_UpdateMerk_Failed() {
 	// rows.AddRow(dummyMerk[0].Id, dummyMerk[0].Name)
 	query := "UPDATE tbl_merk SET name = \\$1 WHERE id = \\?"
 	prep := suite.sqlMock.ExpectPrepare(query)
-	prep.ExpectExec().WithArgs(dummyMerk[0].IsDeleted, dummyMerk[0].Id).WillReturnResult(sqlmock.NewResult(0, 0))
+	prep.ExpectExec().WithArgs(dummyMerk[0].Name, dummyMerk[0].Id).WillReturnResult(sqlmock.NewResult(0, 0))
 	// suite.sqlMock.ExpectPrepare("UPDATE tbl_merk").ExpectQuery().WithArgs(dummyMerk[0].Id).
 
 	repo := NewMerkRepository(suite.dbMock)

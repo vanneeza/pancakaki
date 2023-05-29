@@ -17,9 +17,9 @@ type MerkService interface {
 	Unreg(memberwebmerkId int) (webmerk.MerkResponse, error)
 }
 
-type merkService struct {
-	merkRepo merkrepository.MerkRepository
-}
+// type merkService struct {
+// 	merkRepo merkrepository.MerkRepository
+// }
 
 // DeleteMerk implements MerkService
 type MerkServiceImpl struct {
