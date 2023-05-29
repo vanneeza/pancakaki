@@ -6,7 +6,6 @@ type BankRepository interface {
 	Create(bank *entity.Bank) (*entity.Bank, error)
 	CreateBankAdmin(bankAdmin *entity.BankAdmin) (*entity.BankAdmin, error)
 	FindAll() ([]entity.Bank, error)
-	FindByName(bankName string) (*entity.Bank, error)
 	Update(bank *entity.Bank) (*entity.Bank, error)
 	Delete(bankId int) error
 }

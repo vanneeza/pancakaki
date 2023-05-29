@@ -35,7 +35,7 @@ func (s *ownerService) CreateOwner(newOwner *entity.Owner) (*entity.Owner, error
 		return nil, errors.New("owner with no hp " + newOwner.NoHp + " already exits")
 	}
 
-	getCustomerByNoHp, _ := s.customerRepo.FindByNpHp(newOwner.NoHp)
+	getCustomerByNoHp, _ := s.customerRepo.FindByIdOrNameOrHp(0, "", newOwner.NoHp)
 	// if err != nil {
 	// 	return nil, err
 	// }

@@ -1,8 +1,7 @@
 package merkservice
 
 import (
-	"fmt"
-	"log"
+	"errors"
 	"pancakaki/internal/domain/entity"
 	webmerk "pancakaki/internal/domain/web/merk"
 	merkrepository "pancakaki/internal/repository/merk"
@@ -51,7 +50,6 @@ func (merkService *MerkServiceImpl) ViewAll() ([]webmerk.MerkResponse, error) {
 	merkData, err := merkService.MerkRepository.FindAllMerk()
 	helper.PanicErr(err)
 
-	log.Println(merkData, "ini dari merk")
 	merkResponse := make([]webmerk.MerkResponse, len(merkData))
 	for i, merk := range merkData {
 		merkResponse[i] = webmerk.MerkResponse{
@@ -60,15 +58,14 @@ func (merkService *MerkServiceImpl) ViewAll() ([]webmerk.MerkResponse, error) {
 		}
 	}
 
-	log.Println(merkResponse, "ini dari merk Respon")
-	fmt.Scanln()
-
 	return merkResponse, nil
 }
 
 func (merkService *MerkServiceImpl) ViewOne(merkId int) (webmerk.MerkResponse, error) {
 	merk, err := merkService.MerkRepository.FindMerkById(merkId)
-	helper.PanicErr(err)
+	if err != nil {
+		return webmerk.MerkResponse{}, errors.New("NULL")
+	}
 
 	merkResponse := webmerk.MerkResponse{
 		Id:   merk.Id,
@@ -101,10 +98,14 @@ func (merkService *MerkServiceImpl) Unreg(merkId int) (webmerk.MerkResponse, err
 		Id: merkId,
 	}
 	merkData, err := merkService.MerkRepository.FindMerkById(merk.Id)
-	helper.PanicErr(err)
+	if err != nil {
+		return webmerk.MerkResponse{}, errors.New("NULL")
+	}
 
 	err = merkService.MerkRepository.DeleteMerk(&merk)
-	helper.PanicErr(err)
+	if err != nil {
+		return webmerk.MerkResponse{}, errors.New("NULL")
+	}
 
 	merkResponse := webmerk.MerkResponse{
 		Id:   merkData.Id,

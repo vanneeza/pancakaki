@@ -57,6 +57,7 @@ func (membershipService *MembershipServiceImpl) ViewAll() ([]webmembership.Membe
 }
 
 func (membershipService *MembershipServiceImpl) ViewOne(membershipId int) (webmembership.MembershipResponse, error) {
+
 	membership, err := membershipService.MembershipRepository.FindById(membershipId)
 	helper.PanicErr(err)
 

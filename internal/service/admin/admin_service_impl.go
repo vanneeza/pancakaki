@@ -1,18 +1,17 @@
 package adminservice
 
 import (
-	"fmt"
-	"log"
+	"errors"
 	"pancakaki/internal/domain/entity"
 	webadmin "pancakaki/internal/domain/web/admin"
 	webbank "pancakaki/internal/domain/web/bank"
-	webcustomer "pancakaki/internal/domain/web/customer"
-	webowner "pancakaki/internal/domain/web/owner"
 	adminrepository "pancakaki/internal/repository/admin"
 	bankrepository "pancakaki/internal/repository/bank"
 	customerrepository "pancakaki/internal/repository/customer"
 	ownerrepository "pancakaki/internal/repository/owner"
 	"pancakaki/utils/helper"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AdminServiceImpl struct {
@@ -33,17 +32,18 @@ func NewAdminService(adminRepository adminrepository.AdminRepository, bankReposi
 
 func (adminService *AdminServiceImpl) Register(req webadmin.AdminCreateRequest) (webadmin.AdminResponse, error) {
 
+	encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	admin := entity.Admin{
 		Username: req.Username,
-		Password: req.Passowrd,
+		Password: string(encryptedPassword),
 	}
 
 	adminData, _ := adminService.AdminRepository.Create(&admin)
-
 	adminResponse := webadmin.AdminResponse{
 		Id:       adminData.Id,
 		Username: adminData.Username,
 		Password: adminData.Password,
+		Role:     "admin",
 	}
 	return adminResponse, nil
 }
@@ -59,30 +59,36 @@ func (adminService *AdminServiceImpl) ViewAll() ([]webadmin.AdminResponse, error
 			Id:       admin.Id,
 			Username: admin.Username,
 			Password: admin.Password,
+			Role:     admin.Role,
+			Token:    "NULL",
 		}
 	}
 	return adminResponse, nil
 }
 
-func (adminService *AdminServiceImpl) ViewOne(adminId int) (webadmin.AdminResponse, error) {
-	admin, err := adminService.AdminRepository.FindById(adminId)
-	helper.PanicErr(err)
+func (adminService *AdminServiceImpl) ViewOne(adminId int, username string) (webadmin.AdminResponse, error) {
+	admin, err := adminService.AdminRepository.FindById(adminId, username)
+	if err != nil {
+		return webadmin.AdminResponse{}, errors.New("NULL")
+	}
 
 	adminResponse := webadmin.AdminResponse{
 		Id:       admin.Id,
 		Username: admin.Username,
 		Password: admin.Password,
+		Role:     admin.Role,
+		Token:    "NULL",
 	}
 
 	return adminResponse, nil
 }
 
 func (adminService *AdminServiceImpl) Edit(req webadmin.AdminUpdateRequest) (webadmin.AdminResponse, error) {
-
+	encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	admin := entity.Admin{
 		Id:       req.Id,
 		Username: req.Username,
-		Password: req.Password,
+		Password: string(encryptedPassword),
 	}
 
 	adminData, err := adminService.AdminRepository.Update(&admin)
@@ -92,23 +98,31 @@ func (adminService *AdminServiceImpl) Edit(req webadmin.AdminUpdateRequest) (web
 		Id:       adminData.Id,
 		Username: adminData.Username,
 		Password: adminData.Password,
+		Role:     "admin",
+		Token:    "NULL",
 	}
 
 	return adminResponse, nil
 }
 
-func (adminService *AdminServiceImpl) Unreg(adminId int) (webadmin.AdminResponse, error) {
+func (adminService *AdminServiceImpl) Unreg(adminId int, username string) (webadmin.AdminResponse, error) {
 
-	adminData, err := adminService.AdminRepository.FindById(adminId)
-	helper.PanicErr(err)
+	adminData, err := adminService.AdminRepository.FindById(adminId, username)
+	if err != nil {
+		return webadmin.AdminResponse{}, errors.New("NULL")
+	}
 
 	err = adminService.AdminRepository.Delete(adminId)
-	helper.PanicErr(err)
+	if err != nil {
+		return webadmin.AdminResponse{}, errors.New("NULL")
+	}
 
 	adminResponse := webadmin.AdminResponse{
 		Id:       adminData.Id,
 		Username: adminData.Username,
 		Password: adminData.Password,
+		Role:     adminData.Role,
+		Token:    "NULL",
 	}
 
 	return adminResponse, nil
@@ -122,9 +136,6 @@ func (adminService *AdminServiceImpl) RegisterBank(req webbank.BankCreateRequest
 		AccountName: req.AccountName,
 	}
 
-	log.Println(reqBank.AdminId, "adakah")
-	log.Println(bank)
-	fmt.Scanln()
 	bankData, _ := adminService.BankRepository.Create(&bank)
 
 	bankAdmin := entity.BankAdmin{
@@ -132,10 +143,7 @@ func (adminService *AdminServiceImpl) RegisterBank(req webbank.BankCreateRequest
 		BankId:  bankData.Id,
 	}
 
-	log.Println(bankData, "Nill kah?")
-	fmt.Scanln()
 	adminService.BankRepository.CreateBankAdmin(&bankAdmin)
-
 	bankResponse := webbank.BankResponse{
 		Id:          bankData.Id,
 		Name:        bankData.Name,
@@ -145,23 +153,10 @@ func (adminService *AdminServiceImpl) RegisterBank(req webbank.BankCreateRequest
 	return bankResponse, nil
 }
 
-func (adminService *AdminServiceImpl) ViewOneBank(name string) (webbank.BankResponse, error) {
-
-	bankData, _ := adminService.BankRepository.FindByName(name)
-
-	bankResponse := webbank.BankResponse{
-		Id:          bankData.Id,
-		Name:        bankData.Name,
-		AccountName: bankData.AccountName,
-		BankAccount: bankData.BankAccount,
-	}
-	return bankResponse, nil
-}
-
-func (adminService *AdminServiceImpl) EditBank(req webbank.BankUpdateRequest, reqBank webbank.BankAdminUpdateRequest) (webbank.BankResponse, error) {
+func (adminService *AdminServiceImpl) EditBank(req webbank.BankUpdateRequest) (webbank.BankResponse, error) {
 
 	bank := entity.Bank{
-		Id:          reqBank.AdminId,
+		Id:          req.Id,
 		Name:        req.Name,
 		BankAccount: req.BankAccount,
 		AccountName: req.AccountName,
@@ -192,118 +187,4 @@ func (adminService *AdminServiceImpl) ViewAllBank() ([]webbank.BankResponse, err
 		}
 	}
 	return bankResponse, nil
-}
-
-func (adminService *AdminServiceImpl) ViewTransactionAllOwner() ([]webadmin.TransactionOwnerResponse, error) {
-
-	adminData, err := adminService.AdminRepository.FindTransactionAllOwner()
-	helper.PanicErr(err)
-
-	adminResponse := make([]webadmin.TransactionOwnerResponse, len(adminData))
-	for i, admin := range adminData {
-		adminResponse[i] = webadmin.TransactionOwnerResponse{
-			OwnerName:    admin.OwnerName,
-			ProductName:  admin.NameProduct,
-			MerkName:     admin.NameMerk,
-			Price:        admin.Price,
-			Qty:          admin.Qty,
-			BuyDate:      admin.BuyDate,
-			TotalPrice:   admin.TotalPrice,
-			Status:       admin.Status,
-			CustomerName: admin.CustomerName,
-		}
-	}
-	return adminResponse, nil
-}
-
-func (adminService *AdminServiceImpl) ViewTransactionOwnerByName(ownerNmae string) (webadmin.TransactionOwnerResponse, error) {
-	transactionOwner, err := adminService.AdminRepository.FindTransactionOwnerByName(ownerNmae)
-	helper.PanicErr(err)
-
-	adminResponse := webadmin.TransactionOwnerResponse{
-		OwnerName:    transactionOwner.OwnerName,
-		ProductName:  transactionOwner.NameProduct,
-		MerkName:     transactionOwner.NameMerk,
-		Price:        transactionOwner.Price,
-		Qty:          transactionOwner.Qty,
-		BuyDate:      transactionOwner.BuyDate,
-		TotalPrice:   transactionOwner.TotalPrice,
-		Status:       transactionOwner.Status,
-		CustomerName: transactionOwner.CustomerName,
-	}
-
-	return adminResponse, nil
-}
-
-func (adminService *AdminServiceImpl) ViewAllOwner() ([]webadmin.FindOwnerResponse, error) {
-
-	ownerData, err := adminService.AdminRepository.FindOwner()
-	helper.PanicErr(err)
-
-	adminResponse := make([]webadmin.FindOwnerResponse, len(ownerData))
-	for i, owner := range ownerData {
-		adminResponse[i] = webadmin.FindOwnerResponse{
-			OwnerName:      owner.OwnerName,
-			NoHp:           owner.NoHp,
-			Email:          owner.Email,
-			Password:       owner.Password,
-			NameMembership: owner.NameMembership,
-			NameStore:      owner.NameStore,
-		}
-	}
-	return adminResponse, nil
-}
-
-func (adminService *AdminServiceImpl) ViewOwnerByName(ownerName string) (webadmin.FindOwnerResponse, error) {
-	ownerData, err := adminService.AdminRepository.FindOwnerByName(ownerName)
-	helper.PanicErr(err)
-
-	ownerResponse := webadmin.FindOwnerResponse{
-		OwnerName:      ownerData.OwnerName,
-		NoHp:           ownerData.NoHp,
-		Email:          ownerData.Email,
-		Password:       ownerData.Password,
-		NameMembership: ownerData.NameMembership,
-		NameStore:      ownerData.NameStore,
-	}
-
-	return ownerResponse, nil
-}
-
-func (adminService *AdminServiceImpl) UnregOwner(ownerId int) (webowner.OwnerResponse, error) {
-	ownerData, err := adminService.OwnerRepository.GetOwnerById(ownerId)
-	helper.PanicErr(err)
-	err = adminService.OwnerRepository.DeleteOwner(ownerId)
-	helper.PanicErr(err)
-
-	ownerResponse := webowner.OwnerResponse{
-		Id:           ownerData.Id,
-		Name:         ownerData.Name,
-		NoHp:         ownerData.NoHp,
-		Email:        ownerData.Email,
-		Password:     ownerData.Password,
-		MembershipId: ownerData.MembershipId,
-	}
-	return ownerResponse, nil
-}
-
-func (adminService *AdminServiceImpl) ViewTransactionCustomerById(customerId int) ([]webcustomer.TransactionCustomer, error) {
-	transactionCustomer, err := adminService.CustomerRepository.FindTransactionCustomerById(customerId)
-	helper.PanicErr(err)
-
-	transactionCustomerResponse := make([]webcustomer.TransactionCustomer, len(transactionCustomer))
-	for i, txCustomer := range transactionCustomer {
-		transactionCustomerResponse[i] = webcustomer.TransactionCustomer{
-			OwnerName:    txCustomer.OwnerName,
-			ProductName:  txCustomer.NameProduct,
-			MerkName:     txCustomer.NameMerk,
-			Price:        txCustomer.Price,
-			Qty:          txCustomer.Qty,
-			BuyDate:      txCustomer.BuyDate,
-			TotalPrice:   txCustomer.TotalPrice,
-			Status:       txCustomer.Status,
-			CustomerName: txCustomer.CustomerName,
-		}
-	}
-	return transactionCustomerResponse, nil
 }

@@ -5,7 +5,7 @@ import "time"
 type Customer struct {
 	Id       int
 	Name     string
-	NoHp     int64
+	NoHp     string
 	Address  string
 	Password string
 	IsDelete bool
@@ -13,13 +13,17 @@ type Customer struct {
 }
 
 type TransactionCustomer struct {
-	NameProduct  string
-	NameMerk     string
-	Price        float64
-	Qty          int
-	BuyDate      time.Time
-	TotalPrice   int64
-	Status       string
-	CustomerName string
-	OwnerName    string
+	CustomerName   string
+	MerkName       string
+	ProductId      int
+	ProductName    string
+	ProductPrice   int
+	ShippingCost   int
+	Qty            int
+	Tax            float64
+	TotalPrice     float64
+	BuyDate        time.Time
+	Status         string
+	StoreName      string
+	VirtualAccount int
 }

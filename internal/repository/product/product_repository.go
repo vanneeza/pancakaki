@@ -19,6 +19,8 @@ type ProductRepository interface {
 	FindAllProductByStoreIdAndOwnerId(storeId int, ownerId int) ([]entity.Product, error)
 	FindProductByStoreIdOwnerIdProductId(storeId int, ownerId int, productId int) (*entity.Product, error)
 	FindAllProduct() ([]entity.Product, error)
+	UpdateProductStock(updateProduct *entity.Product) (*entity.Product, error)
+	FindProductById(productId int) (*entity.Product, error)
 }
 
 type productRepository struct {
@@ -294,6 +296,40 @@ func validate(err error, message string, tx *sql.Tx) {
 	} else {
 		fmt.Println("success")
 	}
+}
+
+func (repo *productRepository) UpdateProductStock(updateProduct *entity.Product) (*entity.Product, error) {
+	stmt, err := repo.db.Prepare("UPDATE tbl_product SET stock=$1 WHERE id = $2")
+	if err != nil {
+		return nil, fmt.Errorf("failed to update product stock : %w", err)
+	}
+	defer stmt.Close()
+
+	// updateAt := time.Now()
+	_, err = stmt.Exec(updateProduct.Stock, updateProduct.Id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update product : %w", err)
+	}
+
+	return updateProduct, nil
+}
+
+func (repo *productRepository) FindProductById(productId int) (*entity.Product, error) {
+	var product entity.Product
+	stmt, err := repo.db.Prepare("SELECT id, name, price, stock, description, shipping_cost, merk_id, store_id FROM tbl_product WHERE id = $1")
+	if err != nil {
+		return nil, err
+	}
+
+	defer stmt.Close()
+	row := stmt.QueryRow(productId)
+	err = row.Scan(&product.Id, &product.Name, &product.Price, &product.Stock, &product.Description, &product.ShippingCost, &product.MerkId, &product.StoreId)
+	fmt.Printf("product: %v\n", product)
+	fmt.Scanln()
+	if err != nil {
+		return nil, err
+	}
+	return &product, nil
 }
 
 func NewProductRepository(

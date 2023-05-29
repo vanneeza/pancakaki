@@ -22,6 +22,7 @@ func AuthMiddleware(jwtKey string) gin.HandlerFunc {
 		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (any, error) {
 			return jwtKeyByte, nil
 		})
+
 		if !token.Valid || err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 			ctx.Abort()
@@ -30,7 +31,6 @@ func AuthMiddleware(jwtKey string) gin.HandlerFunc {
 
 		claims := token.Claims.(jwt.MapClaims)
 		ctx.Set("claims", claims)
-
 		ctx.Next()
 	}
 }

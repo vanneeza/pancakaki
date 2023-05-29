@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	admincontroller "pancakaki/api/controller/admin"
+	chartcontroller "pancakaki/api/controller/chart"
 	customercontroller "pancakaki/api/controller/customer"
 	logincontroller "pancakaki/api/controller/login"
 	membershipcontroller "pancakaki/api/controller/membership"
@@ -11,9 +12,11 @@ import (
 	productcontroller "pancakaki/api/controller/product"
 	productimagecontroller "pancakaki/api/controller/product_image"
 	storecontroller "pancakaki/api/controller/store"
+	transactioncontroller "pancakaki/api/controller/transaction"
 	adminrepository "pancakaki/internal/repository/admin"
 	bankrepository "pancakaki/internal/repository/bank"
 	bankstorerepository "pancakaki/internal/repository/bank_store"
+	chartrepository "pancakaki/internal/repository/chart"
 	customerrepository "pancakaki/internal/repository/customer"
 	membershiprepository "pancakaki/internal/repository/membership"
 	merkrepository "pancakaki/internal/repository/merk"
@@ -21,8 +24,10 @@ import (
 	productrepository "pancakaki/internal/repository/product"
 	productimagerepository "pancakaki/internal/repository/product_image"
 	storerepository "pancakaki/internal/repository/store"
+	transactionrepository "pancakaki/internal/repository/transaction"
 	adminservice "pancakaki/internal/service/admin"
 	bankservice "pancakaki/internal/service/bank"
+	chartservice "pancakaki/internal/service/chart"
 	customerservice "pancakaki/internal/service/customer"
 	membershipservice "pancakaki/internal/service/membership"
 	merkservice "pancakaki/internal/service/merk"
@@ -30,6 +35,7 @@ import (
 	productservice "pancakaki/internal/service/product"
 	productimageservice "pancakaki/internal/service/product_image"
 	storeservice "pancakaki/internal/service/store"
+	transactionservice "pancakaki/internal/service/transaction"
 	"pancakaki/utils/helper"
 
 	"github.com/gin-gonic/gin"
@@ -82,23 +88,34 @@ func Run(db *sql.DB) *gin.Engine {
 	adminService := adminservice.NewAdminService(adminRepository, bankRepoCha, ownerRepository, customerRepository)
 	adminController := admincontroller.NewAdminController(adminService)
 
-	loginController := logincontroller.NewLoginController(ownerService, customerService)
+	chartRepository := chartrepository.NewChartRepository(db)
+	chartService := chartservice.NewChartService(chartRepository, productRepository)
+	chartController := chartcontroller.NewChartController(chartService)
+
+	transactionRepositoryCha := transactionrepository.NewTransactionRepository(db)
+	transactionServiceCHa := transactionservice.NewTransactionService(transactionRepositoryCha, productRepository, customerRepository, ownerRepository, chartRepository)
+	transactionController := transactioncontroller.NewTransactionController(transactionServiceCHa)
+	loginController := logincontroller.NewLoginController(ownerService, customerService, adminService)
 
 	var jwtKey = "secret_key"
 	pancakaki := r.Group("pancakaki/v1/")
+	pancakaki.POST("/login", loginController.Login)
 
-	pancakaki.GET("admins/", adminController.ViewAll)
-	admin := pancakaki.Group("/admin")
+	pancakaki.POST("register/owner", ownerController.CreateOwner)
+	pancakaki.POST("register/customer", customerController.Register)
+	pancakaki.POST("register/admin", adminController.Register)
+
+	admin := pancakaki.Group("/admins")
+	admin.Use(helper.AuthMiddleware(jwtKey))
 	{
-		admin.POST("/", adminController.Register)
+		admin.GET("/", adminController.ViewAll)
 		admin.GET("/:id", adminController.ViewOne)
 		admin.PUT("/:id", adminController.Edit)
 		admin.DELETE("/:id", adminController.Unreg)
 
-		admin.POST("/bank/:id", adminController.RegisterBank)
+		admin.POST("/bank/", adminController.RegisterBank)
 		admin.PUT("/bank/:id", adminController.EditBank)
 		admin.GET("/banks/", adminController.ViewAllBank)
-		admin.GET("/bank/:name", adminController.ViewOneBank)
 
 		admin.POST("/membership/", membershipController.Register)
 		admin.GET("/memberships/", membershipController.ViewAll)
@@ -106,17 +123,8 @@ func Run(db *sql.DB) *gin.Engine {
 		admin.PUT("/membership/:id", membershipController.Edit)
 		admin.DELETE("/membership/:id", membershipController.Unreg)
 
-		admin.GET("/transaction_history/owners", adminController.ViewTransactionAllOwner)
-		admin.GET("/transaction_history/owner/:name", adminController.ViewTransactionOwnerByName)
-		admin.GET("/transaction_history/customer/:id", adminController.ViewTransactionCustomerById)
-
-		admin.GET("/owner/profiles/", adminController.ViewAllOwner)
-		admin.DELETE("/owner/profile/:id", adminController.UnregOwner)
-		admin.GET("/owner/profile/:name", adminController.ViewOwnerByName)
-
 		admin.GET("/customer/profiles/", customerController.ViewAll)
 		admin.GET("/customer/profile/:name", customerController.ViewOne)
-
 		admin.POST("/merk/", merkcontroller.Register)
 		admin.GET("/merks/", merkcontroller.ViewAll)
 		admin.GET("/merk/:id", merkcontroller.ViewOne)
@@ -124,9 +132,6 @@ func Run(db *sql.DB) *gin.Engine {
 		admin.DELETE("/merk/:id", merkcontroller.Unreg)
 	}
 
-	pancakaki.POST("/login", loginController.Login)
-
-	pancakaki.POST("/register/owner", ownerController.CreateOwner)
 	pancakaki.GET("/ownerhp/:hp", ownerController.GetOwnerByNoHp)
 
 	owner := pancakaki.Group("/owner")
@@ -149,27 +154,10 @@ func Run(db *sql.DB) *gin.Engine {
 		owner.DELETE("/store/:storeid/product/:productid", productController.DeleteMainProduct)
 	}
 
-	merk := pancakaki.Group("/testaja")
-	{
-		store := pancakaki.Group("/stores")
-		{
-			store.POST("/product", merkcontroller.Register)
-		}
-		merk.POST("/merk", merkcontroller.Register)
-		merk.GET("/", merkcontroller.ViewAll)
-		merk.GET("/:id", merkcontroller.ViewOne)
-		merk.PUT("/", merkcontroller.Unreg)
-		merk.DELETE("/:id", merkcontroller.Unreg)
-	}
-
 	product := pancakaki.Group("/products")
 	{
 		product.POST("/", productController.InsertMainProduct)
 		product.GET("/", productController.FindAllProduct)
-		// product.GET("/:id", productController.FindProductById)
-		// product.GET("/name/:name", productController.FindProductByName)
-		// product.PUT("/", productController.UpdateProduct)
-		// product.PUT("/:id", productController.DeleteProduct)
 	}
 
 	productImage := pancakaki.Group("/product-image")
@@ -185,11 +173,29 @@ func Run(db *sql.DB) *gin.Engine {
 	customer := pancakaki.Group("/customers")
 	customer.Use(helper.AuthMiddleware(jwtKey))
 	{
-		customer.POST("/", customerController.Register)
-		customer.GET("/", customerController.ViewAll)
-		customer.GET("/:name", customerController.ViewOne)
-		customer.PUT("/:id", customerController.Edit)
-		customer.DELETE("/:name", customerController.Unreg)
+
+		customer.GET("/profile", customerController.ViewOne)
+		customer.PUT("/profile", customerController.Edit)
+		customer.DELETE("/profile", customerController.Unreg)
+
+		//------------ TRANSACTION CUSTOMER LANGSUNG BELI --------------------//
+		customer.POST("/transaction", transactionController.MakeOrder)
+		customer.POST("/transaction/multiple", transactionController.MakeMultipleOrder)
+		customer.POST("/payment/:id", transactionController.CustomerPayment)
+
+		//---------- Customer Chart ------------------- //
+		customer.POST("/chart/", chartController.Register)
+		customer.GET("/charts/", chartController.ViewAll)
+		customer.GET("/chart/:id", chartController.ViewOne)
+		customer.PUT("/chart/:id", chartController.Edit)
+		customer.DELETE("/chart/:id", chartController.Unreg)
+
+		//------- NOTIFICATION ------ //
+		customer.GET("/notification", customerController.Notification)
+
+		////------------------- TEST PAYMENTGATEWAY : PROSESS --------------//
+		// customer.POST("/payment", transactionController.CreatePaymentIntent)
 	}
+
 	return r
 }

@@ -10,6 +10,4 @@ type Product struct {
 	MerkId       int
 	StoreId      int
 	IsDeleted    bool
-	// CreatedAt    time.Time
-	// UpdateAt     time.Time
 }

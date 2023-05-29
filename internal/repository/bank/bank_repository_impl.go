@@ -16,6 +16,7 @@ func NewBankRepository(Db *sql.DB) BankRepository {
 }
 
 func (r *BankRepositoryImpl) Create(bank *entity.Bank) (*entity.Bank, error) {
+
 	stmt, err := r.Db.Prepare("INSERT INTO tbl_bank (name, bank_account, account_name) VALUES ($1, $2, $3) RETURNING id")
 	if err != nil {
 		return nil, err
@@ -66,28 +67,9 @@ func (r *BankRepositoryImpl) FindAll() ([]entity.Bank, error) {
 	return tbl_bank, nil
 }
 
-func (r *BankRepositoryImpl) FindByName(bankName string) (*entity.Bank, error) {
-	var bank entity.Bank
-	stmt, err := r.Db.Prepare(`SELECT tbl_bank.id, tbl_bank.name, tbl_bank.bank_account, tbl_bank.account_name
-	FROM tbl_bank INNER JOIN tbl_bank_admin ON tbl_bank.id = tbl_bank_admin.bank_id WHERE tbl_bank.name = $1`)
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-
-	row := stmt.QueryRow(bankName)
-	err = row.Scan(&bank.Id, &bank.Name, &bank.BankAccount, &bank.AccountName)
-	if err != nil {
-		return nil, err
-	}
-
-	return &bank, nil
-}
-
 func (r *BankRepositoryImpl) Update(bank *entity.Bank) (*entity.Bank, error) {
-	stmt, err := r.Db.Prepare(`UPDATE tbl_bank
-	SET name = $1, bank_account = $2, account_name = $3
-	WHERE id IN (SELECT bank_id FROM tbl_bank_admin WHERE admin_id = $4)`)
+	stmt, err := r.Db.Prepare(`UPDATE tbl_bank SET name = $1, bank_account = $2, account_name = $3	WHERE id = $4`)
+
 	if err != nil {
 		return nil, err
 	}

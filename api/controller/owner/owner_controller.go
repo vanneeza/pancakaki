@@ -49,6 +49,7 @@ func (h *ownerHandler) CreateOwner(ctx *gin.Context) {
 	}
 
 	getMembershipById, err := h.membershipService.ViewOne(owner.MembershipId)
+
 	helper.InternalServerError(err, ctx)
 	if err != nil {
 		result := web.WebResponse{
@@ -82,13 +83,13 @@ func (h *ownerHandler) CreateOwner(ctx *gin.Context) {
 	getOwnerById, err := h.ownerService.GetOwnerById(newOwner.Id)
 	helper.InternalServerError(err, ctx)
 	// newOwnerId := strconv.Itoa(newOwner.Id)
-	token := jwt.New(jwt.SigningMethodHS256)
 
+	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["id"] = strconv.Itoa(newOwner.Id)
 	claims["role"] = getOwnerById.Role
 	claims["nohp"] = getOwnerById.NoHp
-	claims["exp"] = time.Now().Add(time.Minute * 5).Unix()
+	claims["exp"] = time.Now().Add(time.Minute * 60).Unix()
 
 	var jwtKeyByte = []byte(jwtKey)
 	tokenString, err := token.SignedString(jwtKeyByte)

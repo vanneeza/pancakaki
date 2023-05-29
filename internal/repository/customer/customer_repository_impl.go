@@ -2,6 +2,7 @@ package customerrepository
 
 import (
 	"database/sql"
+	"fmt"
 	"pancakaki/internal/domain/entity"
 	"pancakaki/utils/helper"
 )
@@ -51,37 +52,18 @@ func (r *CustomerRepositoryImpl) FindAll() ([]entity.Customer, error) {
 	return customers, nil
 }
 
-func (r *CustomerRepositoryImpl) FindByName(customerName string) (*entity.Customer, error) {
+func (r *CustomerRepositoryImpl) FindByIdOrNameOrHp(customerId int, customerName, customerNoHP string) (*entity.Customer, error) {
 	var customer entity.Customer
-	stmt, err := r.Db.Prepare("SELECT id, name, no_hp, address, password FROM tbl_customer WHERE name = $1")
+	stmt, err := r.Db.Prepare("SELECT id, name, no_hp, address, password, role FROM tbl_customer WHERE is_deleted = 'false' AND id = $1 OR name = $2 OR no_hp = $3")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error prepare")
 	}
 	defer stmt.Close()
-
-	row := stmt.QueryRow(customerName)
-	err = row.Scan(&customer.Id, &customer.Name, &customer.NoHp, &customer.Address, &customer.Password)
-	if err != nil {
-		return nil, err
-	}
-
-	return &customer, nil
-}
-
-func (r *CustomerRepositoryImpl) FindByNpHp(noHp string) (*entity.Customer, error) {
-	var customer entity.Customer
-	stmt, err := r.Db.Prepare("SELECT id, name, no_hp, address, password, role FROM tbl_customer WHERE no_hp = $1")
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-
-	row := stmt.QueryRow(noHp)
+	row := stmt.QueryRow(customerId, customerName, customerNoHP)
 	err = row.Scan(&customer.Id, &customer.Name, &customer.NoHp, &customer.Address, &customer.Password, &customer.Role)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("customer not found")
 	}
-
 	return &customer, nil
 }
 
@@ -101,7 +83,7 @@ func (r *CustomerRepositoryImpl) Update(customer *entity.Customer) (*entity.Cust
 }
 
 func (r *CustomerRepositoryImpl) Delete(customerId int) error {
-	stmt, err := r.Db.Prepare("UPDATE customer SET is_deleted = TRUE WHERE id = $1")
+	stmt, err := r.Db.Prepare("UPDATE tbl_customer SET is_deleted = TRUE WHERE id = $1")
 	if err != nil {
 		return err
 	}
@@ -115,25 +97,41 @@ func (r *CustomerRepositoryImpl) Delete(customerId int) error {
 	return nil
 }
 
-func (r *CustomerRepositoryImpl) FindTransactionCustomerById(customerId int) ([]entity.TransactionCustomer, error) {
+func (r *CustomerRepositoryImpl) FindTransactionCustomerById(customerId, virtualAccount int) ([]entity.TransactionCustomer, error) {
+	fmt.Printf("customerId: %v\n", customerId)
+	fmt.Printf("virtualAccount: %v\n", virtualAccount)
+	fmt.Scanln()
 	var customers []entity.TransactionCustomer
-	rows, err := r.Db.Query(`SELECT tbl_product.name AS product_name, tbl_merk.name AS merk_name, tbl_product.price, tbl_transaction_order.quantity, 
-	tbl_transaction_detail_order.buy_date, tbl_transaction_detail_order.total_price, tbl_transaction_detail_order.status, tbl_customer.name AS customer_name,
-	tbl_owner.name AS owner_name
-	FROM tbl_product
-	INNER JOIN tbl_transaction_order ON tbl_product.id = tbl_transaction_order.product_id
-	INNER JOIN tbl_transaction_detail_order ON tbl_transaction_order.detail_order_id = tbl_transaction_detail_order.id
- 	INNER JOIN tbl_customer ON tbl_transaction_order.customer_id = tbl_customer.id
+	rows, err := r.Db.Query(`SELECT tbl_customer.name, tbl_merk.name, tbl_product.id, tbl_product.name, tbl_product.price, tbl_product.shipping_cost,
+	tbl_transaction_order.quantity, tbl_transaction_detail_order.tax, tbl_transaction_detail_order.total_price,
+	tbl_transaction_detail_order.buy_date, tbl_transaction_detail_order.status,tbl_store.name, tbl_transaction_detail_order.virtual_account
+	FROM tbl_transaction_detail_order
+	INNER JOIN tbl_transaction_order ON tbl_transaction_detail_order.id = tbl_transaction_order.detail_order_id
+	INNER JOIN tbl_customer ON tbl_transaction_order.customer_id = tbl_customer.id
+	INNER JOIN tbl_product ON tbl_transaction_order.product_id = tbl_product.id
 	INNER JOIN tbl_store ON tbl_product.store_id = tbl_store.id
-	INNER JOIN tbl_owner ON tbl_store.owner_id = tbl_owner.id
-	INNER JOIN tbl_merk ON tbl_product.merk_id = tbl_merk.id WHERE tbl_customer.id = $1`, customerId)
+	INNER JOIN tbl_merk ON tbl_product.merk_id = tbl_merk.id
+	WHERE tbl_customer.id = $1 OR tbl_transaction_detail_order.virtual_account = $2
+	ORDER BY tbl_transaction_detail_order.status, tbl_transaction_detail_order.virtual_account ASC;`, customerId, virtualAccount)
 	helper.PanicErr(err)
 
 	defer rows.Close()
 
 	for rows.Next() {
 		var customer entity.TransactionCustomer
-		err := rows.Scan(&customer.NameProduct, &customer.NameMerk, &customer.Price, &customer.Qty, &customer.BuyDate, &customer.TotalPrice, &customer.Status, &customer.CustomerName, &customer.OwnerName)
+		err := rows.Scan(&customer.CustomerName,
+			&customer.MerkName,
+			&customer.ProductId,
+			&customer.ProductName,
+			&customer.ProductPrice,
+			&customer.ShippingCost,
+			&customer.Qty,
+			&customer.Tax,
+			&customer.TotalPrice,
+			&customer.BuyDate,
+			&customer.Status,
+			&customer.StoreName,
+			&customer.VirtualAccount)
 		if err != nil {
 			return nil, err
 		}
