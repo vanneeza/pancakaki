@@ -64,7 +64,9 @@ func (customerService *CustomerServiceImpl) ViewAll() ([]webcustomer.CustomerRes
 
 func (customerService *CustomerServiceImpl) ViewOne(customerId int, customerName, customerNoHp string) (webcustomer.CustomerResponse, error) {
 	customer, err := customerService.CustomerRepository.FindByIdOrNameOrHp(customerId, customerName, customerNoHp)
-	helper.PanicErr(err)
+	if err != nil {
+		return webcustomer.CustomerResponse{}, err
+	}
 
 	customerResponse := webcustomer.CustomerResponse{
 		Id:       customer.Id,

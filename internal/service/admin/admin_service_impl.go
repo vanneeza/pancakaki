@@ -21,7 +21,10 @@ type AdminServiceImpl struct {
 	CustomerRepository customerrepository.CustomerRepository
 }
 
-func NewAdminService(adminRepository adminrepository.AdminRepository, bankRepository bankrepository.BankRepository, ownerRepository ownerrepository.OwnerRepository, customerRepository customerrepository.CustomerRepository) AdminService {
+func NewAdminService(adminRepository adminrepository.AdminRepository,
+	bankRepository bankrepository.BankRepository,
+	ownerRepository ownerrepository.OwnerRepository,
+	customerRepository customerrepository.CustomerRepository) AdminService {
 	return &AdminServiceImpl{
 		AdminRepository:    adminRepository,
 		BankRepository:     bankRepository,

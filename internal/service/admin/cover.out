@@ -1,0 +1,20 @@
+mode: set
+pancakaki/internal/service/admin/admin_service_impl.go:27.73,34.2 1 1
+pancakaki/internal/service/admin/admin_service_impl.go:36.113,52.2 5 1
+pancakaki/internal/service/admin/admin_service_impl.go:54.83,60.34 4 1
+pancakaki/internal/service/admin/admin_service_impl.go:60.34,68.3 1 1
+pancakaki/internal/service/admin/admin_service_impl.go:69.2,69.27 1 1
+pancakaki/internal/service/admin/admin_service_impl.go:72.109,74.16 2 0
+pancakaki/internal/service/admin/admin_service_impl.go:74.16,76.3 1 0
+pancakaki/internal/service/admin/admin_service_impl.go:78.2,86.27 2 0
+pancakaki/internal/service/admin/admin_service_impl.go:89.109,109.2 6 0
+pancakaki/internal/service/admin/admin_service_impl.go:111.107,114.16 2 0
+pancakaki/internal/service/admin/admin_service_impl.go:114.16,116.3 1 0
+pancakaki/internal/service/admin/admin_service_impl.go:118.2,119.16 2 0
+pancakaki/internal/service/admin/admin_service_impl.go:119.16,121.3 1 0
+pancakaki/internal/service/admin/admin_service_impl.go:123.2,131.27 2 0
+pancakaki/internal/service/admin/admin_service_impl.go:134.153,157.2 6 0
+pancakaki/internal/service/admin/admin_service_impl.go:159.109,177.2 4 0
+pancakaki/internal/service/admin/admin_service_impl.go:178.85,184.32 4 0
+pancakaki/internal/service/admin/admin_service_impl.go:184.32,191.3 1 0
+pancakaki/internal/service/admin/admin_service_impl.go:192.2,192.26 1 0

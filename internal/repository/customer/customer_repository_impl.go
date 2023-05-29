@@ -34,7 +34,7 @@ func (r *CustomerRepositoryImpl) Create(customer *entity.Customer) (*entity.Cust
 
 func (r *CustomerRepositoryImpl) FindAll() ([]entity.Customer, error) {
 	var customers []entity.Customer
-	rows, err := r.Db.Query("SELECT id, name, no_hp, address, password FROM tbl_customer")
+	rows, err := r.Db.Query("SELECT id, name, no_hp, address, password FROM tbl_customer WHERE is_deleted = 'FALSE'")
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +61,10 @@ func (r *CustomerRepositoryImpl) FindByIdOrNameOrHp(customerId int, customerName
 	defer stmt.Close()
 	row := stmt.QueryRow(customerId, customerName, customerNoHP)
 	err = row.Scan(&customer.Id, &customer.Name, &customer.NoHp, &customer.Address, &customer.Password, &customer.Role)
-	if err != nil {
-		return nil, fmt.Errorf("customer not found")
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("customer not found with customerId %d, customerName %s, customerNoHp %s", customerId, customerName, customerNoHP)
+	} else if err != nil {
+		return nil, err
 	}
 	return &customer, nil
 }
@@ -98,9 +100,7 @@ func (r *CustomerRepositoryImpl) Delete(customerId int) error {
 }
 
 func (r *CustomerRepositoryImpl) FindTransactionCustomerById(customerId, virtualAccount int) ([]entity.TransactionCustomer, error) {
-	fmt.Printf("customerId: %v\n", customerId)
-	fmt.Printf("virtualAccount: %v\n", virtualAccount)
-	fmt.Scanln()
+
 	var customers []entity.TransactionCustomer
 	rows, err := r.Db.Query(`SELECT tbl_customer.name, tbl_merk.name, tbl_product.id, tbl_product.name, tbl_product.price, tbl_product.shipping_cost,
 	tbl_transaction_order.quantity, tbl_transaction_detail_order.tax, tbl_transaction_detail_order.total_price,

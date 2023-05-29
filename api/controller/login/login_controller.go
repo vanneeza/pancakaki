@@ -1,7 +1,6 @@
 package logincontroller
 
 import (
-	"fmt"
 	"net/http"
 	"pancakaki/internal/domain/web"
 	weblogin "pancakaki/internal/domain/web/login"
@@ -66,102 +65,96 @@ func (h *loginController) Login(ctx *gin.Context) {
 			Data:    tokenString,
 		}
 		ctx.JSON(http.StatusOK, result)
-	} else {
+		return
+	}
+	checkRole := ""
+	getOwnerByNoHp, _ := h.ownerService.GetOwnerByNoHp(login.NoHp)
+	if getOwnerByNoHp != nil {
+		checkRole = "owner"
+	}
+	getCustomerByNoHp, _ := h.customerService.ViewOne(0, "", login.NoHp)
+	if getCustomerByNoHp.NoHp != "" {
+		checkRole = "customer"
+	}
 
-		getOwnerByNoHp, _ := h.ownerService.GetOwnerByNoHp(login.NoHp)
-
-		fmt.Printf("getOwnerByNoHp: %v\n", getOwnerByNoHp)
-		fmt.Scanln()
-
-		checkRole := ""
-		if getOwnerByNoHp != nil {
-			checkRole = "owner"
+	if checkRole == "" {
+		result := web.WebResponse{
+			Code:    http.StatusNotFound,
+			Status:  "NOT_FOUND",
+			Message: "user not found",
+			Data:    "NULL",
 		}
+		ctx.JSON(http.StatusNotFound, result)
+		return
+	}
 
-		if checkRole == "" {
+	if checkRole == "owner" {
+		match := helper.CheckPasswordHash(login.Password, getOwnerByNoHp.Password)
+		if !match {
 			result := web.WebResponse{
-				Code:    http.StatusNotFound,
-				Status:  "NOT_FOUND",
-				Message: "user not found",
-				Data:    "NULL",
+				Code:    http.StatusBadRequest,
+				Status:  "BAD_REQUEST",
+				Message: "bad request",
+				Data:    "wrong password",
 			}
-			ctx.JSON(http.StatusNotFound, result)
+			ctx.JSON(http.StatusBadRequest, result)
 			return
 		}
 
-		if checkRole == "owner" {
-			match := helper.CheckPasswordHash(login.Password, getOwnerByNoHp.Password)
-			if !match {
-				result := web.WebResponse{
-					Code:    http.StatusBadRequest,
-					Status:  "BAD_REQUEST",
-					Message: "bad request",
-					Data:    "wrong password",
-				}
-				ctx.JSON(http.StatusBadRequest, result)
-				return
-			}
+		token := jwt.New(jwt.SigningMethodHS256)
 
-			token := jwt.New(jwt.SigningMethodHS256)
+		claims := token.Claims.(jwt.MapClaims)
+		claims["id"] = strconv.Itoa(getOwnerByNoHp.Id)
+		claims["role"] = getOwnerByNoHp.Role
+		claims["nohp"] = getOwnerByNoHp.NoHp
+		claims["exp"] = time.Now().Add(time.Minute * 60).Unix()
 
-			claims := token.Claims.(jwt.MapClaims)
-			claims["id"] = strconv.Itoa(getOwnerByNoHp.Id)
-			claims["role"] = getOwnerByNoHp.Role
-			claims["nohp"] = getOwnerByNoHp.NoHp
-			claims["exp"] = time.Now().Add(time.Minute * 60).Unix()
+		var jwtKeyByte = []byte(jwtKey)
+		tokenString, err := token.SignedString(jwtKeyByte)
+		helper.InternalServerError(err, ctx)
 
-			var jwtKeyByte = []byte(jwtKey)
-			tokenString, err := token.SignedString(jwtKeyByte)
-			helper.InternalServerError(err, ctx)
-
-			result := web.WebResponse{
-				Code:    http.StatusOK,
-				Status:  "OK",
-				Message: "the owner has successfully logged in. Hello " + getOwnerByNoHp.Name,
-				Data:    tokenString,
-			}
-			ctx.JSON(http.StatusOK, result)
-
-		} else if checkRole == "customer" {
-
-			getCustomerByNoHp, _ := h.customerService.ViewOne(0, "", login.NoHp)
-			if getOwnerByNoHp != nil {
-				checkRole = "customer"
-			}
-
-			match := helper.CheckPasswordHash(login.Password, getCustomerByNoHp.Password)
-			if !match {
-				result := web.WebResponse{
-					Code:    http.StatusBadRequest,
-					Status:  "BAD_REQUEST",
-					Message: "bad request",
-					Data:    "wrong password",
-				}
-				ctx.JSON(http.StatusBadRequest, result)
-				return
-			}
-
-			token := jwt.New(jwt.SigningMethodHS256)
-			claims := token.Claims.(jwt.MapClaims)
-			claims["id"] = strconv.Itoa(getCustomerByNoHp.Id)
-			claims["name"] = getCustomerByNoHp.Name
-			claims["role"] = getCustomerByNoHp.Role
-			claims["nohp"] = getCustomerByNoHp.NoHp
-			claims["address"] = getCustomerByNoHp.Address
-			claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
-
-			var jwtKeyByte = []byte(jwtKey)
-			tokenString, err := token.SignedString(jwtKeyByte)
-			helper.InternalServerError(err, ctx)
-
-			result := web.WebResponse{
-				Code:    http.StatusOK,
-				Status:  "OK",
-				Message: "The customer has successfully logged in.",
-				Data:    tokenString,
-			}
-			ctx.JSON(http.StatusOK, result)
+		result := web.WebResponse{
+			Code:    http.StatusOK,
+			Status:  "OK",
+			Message: "the owner has successfully logged in. Hello " + getOwnerByNoHp.Name,
+			Data:    tokenString,
 		}
+		ctx.JSON(http.StatusOK, result)
+
+	} else if checkRole == "customer" {
+
+		match := helper.CheckPasswordHash(login.Password, getCustomerByNoHp.Password)
+		if !match {
+			result := web.WebResponse{
+				Code:    http.StatusBadRequest,
+				Status:  "BAD_REQUEST",
+				Message: "bad request",
+				Data:    "wrong password",
+			}
+			ctx.JSON(http.StatusBadRequest, result)
+			return
+		}
+
+		token := jwt.New(jwt.SigningMethodHS256)
+		claims := token.Claims.(jwt.MapClaims)
+		claims["id"] = strconv.Itoa(getCustomerByNoHp.Id)
+		claims["name"] = getCustomerByNoHp.Name
+		claims["role"] = getCustomerByNoHp.Role
+		claims["nohp"] = getCustomerByNoHp.NoHp
+		claims["address"] = getCustomerByNoHp.Address
+		claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
+
+		var jwtKeyByte = []byte(jwtKey)
+		tokenString, err := token.SignedString(jwtKeyByte)
+		helper.InternalServerError(err, ctx)
+
+		result := web.WebResponse{
+			Code:    http.StatusOK,
+			Status:  "OK",
+			Message: "The customer has successfully logged in.",
+			Data:    tokenString,
+		}
+		ctx.JSON(http.StatusOK, result)
 	}
 
 }

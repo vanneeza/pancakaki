@@ -49,7 +49,7 @@ func (r *BankRepositoryImpl) CreateBankAdmin(bankAdmin *entity.BankAdmin) (*enti
 func (r *BankRepositoryImpl) FindAll() ([]entity.Bank, error) {
 	var tbl_bank []entity.Bank
 	rows, err := r.Db.Query(`SELECT tbl_bank.id, tbl_bank.name, tbl_bank.bank_account, tbl_bank.account_name
-	FROM tbl_bank INNER JOIN tbl_bank_admin ON tbl_bank.id = tbl_bank_admin.bank_id`)
+	FROM tbl_bank INNER JOIN tbl_bank_admin ON tbl_bank.id = tbl_bank_admin.bank_id where tbl_bank.is_deleted = false`)
 	if err != nil {
 		return nil, err
 	}

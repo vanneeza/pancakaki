@@ -69,8 +69,7 @@ func (r *MembershipRepositoryImpl) FindById(id int) (*entity.Membership, error) 
 }
 
 func (r *MembershipRepositoryImpl) Update(membership *entity.Membership) (*entity.Membership, error) {
-	stmt, err := r.Db.Prepare(`UPDATE tbl_membership 
-	SET name = $1, tax = $2, price = $3	WHERE id = $4`)
+	stmt, err := r.Db.Prepare("UPDATE tbl_membership SET name = $1, tax = $2, price = $3 WHERE id = $4")
 	if err != nil {
 		return nil, err
 	}

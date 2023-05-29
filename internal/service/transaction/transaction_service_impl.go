@@ -128,11 +128,13 @@ func (transactionService *TransactionServiceImpl) CustomerPayment(req webtransac
 	txCustomerData, _ := transactionService.CustomerRepository.FindTransactionCustomerById(0, req.VirtualAccount)
 
 	for _, txCustomer := range txCustomerData {
+
 		productResponse := webtransaction.ProductResponse{
 			MerkName:     txCustomer.MerkName,
 			ProductName:  txCustomer.ProductName,
 			ProductPrice: txCustomer.ProductPrice,
 			Qty:          txCustomer.Qty,
+			Total:        txCustomer.TotalPrice * float64(txCustomer.Qty),
 		}
 
 		txCustomerResponse = entity.TransactionCustomer{
@@ -174,8 +176,7 @@ func (transactionService *TransactionServiceImpl) CustomerPayment(req webtransac
 		Stock: productStock,
 	}
 
-	p, _ := transactionService.ProductRepository.UpdateProductStock(&stock)
-	fmt.Printf("p: %v\n", p)
+	transactionService.ProductRepository.UpdateProductStock(&stock)
 
 	transactionCustomerResponse := webtransaction.CustomerPaymentResponse{
 		CustomerName:   txCustomerResponse.CustomerName,

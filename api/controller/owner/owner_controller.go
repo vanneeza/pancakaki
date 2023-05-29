@@ -62,7 +62,6 @@ func (h *ownerHandler) CreateOwner(ctx *gin.Context) {
 		return
 	}
 
-	// bANK
 	getBankAdminById, err := h.bankService.GetBankAdminById(1)
 	helper.InternalServerError(err, ctx)
 
@@ -82,7 +81,6 @@ func (h *ownerHandler) CreateOwner(ctx *gin.Context) {
 	}
 	getOwnerById, err := h.ownerService.GetOwnerById(newOwner.Id)
 	helper.InternalServerError(err, ctx)
-	// newOwnerId := strconv.Itoa(newOwner.Id)
 
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)

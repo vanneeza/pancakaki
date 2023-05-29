@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"pancakaki/internal/domain/entity"
-	"strconv"
 )
 
 type OwnerRepository interface {
@@ -29,11 +28,7 @@ func (repo *ownerRepository) CreateOwner(newOwner *entity.Owner) (*entity.Owner,
 	}
 	defer stmt.Close()
 
-	ownerNoHp, err := strconv.ParseInt(newOwner.NoHp, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	err = stmt.QueryRow(newOwner.Name, ownerNoHp, newOwner.Email, newOwner.Password, newOwner.MembershipId).Scan(&newOwner.Id)
+	err = stmt.QueryRow(newOwner.Name, newOwner.NoHp, newOwner.Email, newOwner.Password, newOwner.MembershipId).Scan(&newOwner.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create owner : %w", err)
 	}

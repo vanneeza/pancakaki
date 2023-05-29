@@ -13,7 +13,6 @@ type paymentService struct {
 	paymentRepo paymentrepository.PaymentRepository
 }
 
-// DeletePayment implements PaymentService
 func (s *paymentService) InsertPayment(newPayment *entity.Payment) (*entity.Payment, error) {
 	return s.paymentRepo.InsertPayment(newPayment)
 }
