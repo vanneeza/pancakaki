@@ -2,9 +2,9 @@ package storecontroller
 
 import (
 	"net/http"
+	"pancakaki/internal/domain/entity"
 	"pancakaki/internal/domain/web"
 	webstore "pancakaki/internal/domain/web/store"
-	ownerservice "pancakaki/internal/service/owner"
 	storeservice "pancakaki/internal/service/store"
 	"pancakaki/utils/helper"
 	"strconv"
@@ -14,15 +14,59 @@ import (
 )
 
 type StoreController interface {
+	GetTransactionByStoreId(ctx *gin.Context)
 	CreateMainStore(ctx *gin.Context)
 	UpdateMainStore(ctx *gin.Context)
+	UpdatePayment(ctx *gin.Context)
 	DeleteMainStore(ctx *gin.Context)
 	GetStoreByOwnerId(ctx *gin.Context)
 }
 
 type storeController struct {
 	storeService storeservice.StoreService
-	ownerService ownerservice.OwnerService
+	// ownerService ownerservice.OwnerService
+}
+
+func (h *storeController) GetTransactionByStoreId(ctx *gin.Context) {
+	claims := ctx.MustGet("claims").(jwt.MapClaims)
+	ownerId := claims["id"].(string)
+	ownerIdInt, _ := strconv.Atoi(ownerId)
+
+	role := claims["role"].(string)
+	// fmt.Println(role)
+	if role != "owner" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "unauthorized",
+			Data:    "user is unauthorized",
+		}
+		ctx.JSON(http.StatusUnauthorized, result)
+		return
+	}
+
+	storeId := ctx.Param("storeid")
+	storeIdInt, _ := strconv.Atoi(storeId)
+
+	getTransactionByStoreId, err := h.storeService.GetTransactionByStoreIdAndOwnerId(storeIdInt, ownerIdInt)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "status internal server error",
+			Data:    err.Error(),
+		}
+		ctx.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+		return
+	}
+	result := web.WebResponse{
+		Code:    http.StatusOK,
+		Status:  "OK",
+		Message: "success get transaction by store",
+		Data:    getTransactionByStoreId,
+	}
+	ctx.JSON(http.StatusOK, result)
+
 }
 
 func (h *storeController) CreateMainStore(ctx *gin.Context) {
@@ -125,6 +169,50 @@ func (h *storeController) UpdateMainStore(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, result)
 }
 
+func (h *storeController) UpdatePayment(ctx *gin.Context) {
+	claims := ctx.MustGet("claims").(jwt.MapClaims)
+	ownerId := claims["id"].(string)
+	ownerIdInt, _ := strconv.Atoi(ownerId)
+	role := claims["role"].(string)
+	if role != "owner" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "unauthorized",
+			Data:    "user is unauthorized",
+		}
+		ctx.JSON(http.StatusUnauthorized, result)
+		return
+	}
+
+	storeId := ctx.Param("storeid")
+	storeIdInt, _ := strconv.Atoi(storeId)
+	transactionId := ctx.Param("transactionid")
+	transactionIdInt, _ := strconv.Atoi(transactionId)
+
+	var updateTransaction entity.TransactionOrderDetail
+	updateTransaction.Id = transactionIdInt
+	newUpdateTransaction, err := h.storeService.UpdatePayment(&updateTransaction, storeIdInt, ownerIdInt)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "status internal server error",
+			Data:    err.Error(),
+		}
+		ctx.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+		return
+	}
+
+	result := web.WebResponse{
+		Code:    http.StatusOK,
+		Status:  "OK",
+		Message: "success update transaction with id " + transactionId,
+		Data:    newUpdateTransaction,
+	}
+	ctx.JSON(http.StatusOK, result)
+
+}
 func (h *storeController) DeleteMainStore(ctx *gin.Context) {
 
 	claims := ctx.MustGet("claims").(jwt.MapClaims)
@@ -146,7 +234,17 @@ func (h *storeController) DeleteMainStore(ctx *gin.Context) {
 	storeIdInt, _ := strconv.Atoi(storeId)
 
 	err := h.storeService.DeleteMainStore(storeIdInt, ownerIdInt)
-	helper.InternalServerError(err, ctx)
+	// helper.InternalServerError(err, ctx)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "status internal server error",
+			Data:    err.Error(),
+		}
+		ctx.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+		return
+	}
 
 	result := web.WebResponse{
 		Code:    http.StatusOK,
@@ -195,8 +293,10 @@ func (h *storeController) GetStoreByOwnerId(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, result)
 
 }
-func NewStoreHandler(storeService storeservice.StoreService, ownerService ownerservice.OwnerService) StoreController {
+func NewStoreHandler(
+	storeService storeservice.StoreService) StoreController {
 	return &storeController{
 		storeService: storeService,
-		ownerService: ownerService}
+		// ownerService: ownerService
+	}
 }

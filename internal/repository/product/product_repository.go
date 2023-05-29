@@ -325,7 +325,7 @@ func (repo *productRepository) FindProductById(productId int) (*entity.Product, 
 	row := stmt.QueryRow(productId)
 	err = row.Scan(&product.Id, &product.Name, &product.Price, &product.Stock, &product.Description, &product.ShippingCost, &product.MerkId, &product.StoreId)
 	fmt.Printf("product: %v\n", product)
-	fmt.Scanln()
+	// fmt.Scanln()
 	if err != nil {
 		return nil, err
 	}

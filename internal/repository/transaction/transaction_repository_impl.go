@@ -111,3 +111,28 @@ func (r *TransactionRepositoryImpl) UpdatePhotoAndStatus(TransactionOrderDetail 
 	return TransactionOrderDetail, nil
 
 }
+
+func (r *TransactionRepositoryImpl) FindById(id int) (*entity.TransactionOrderDetail, error) {
+	var transactionOrderDetail entity.TransactionOrderDetail
+	stmt, err := r.Db.Prepare("SELECT id, buy_date,status,total_price,photo,tax, virtual_account FROM tbl_transaction_detail_order WHERE id = $1")
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(id).Scan(
+		&transactionOrderDetail.Id,
+		&transactionOrderDetail.BuyDate,
+		&transactionOrderDetail.Status,
+		&transactionOrderDetail.TotalPrice,
+		&transactionOrderDetail.Photo,
+		&transactionOrderDetail.Tax,
+		&transactionOrderDetail.VirtualAccount)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("transaction order with id %d not found", transactionOrderDetail.Id)
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &transactionOrderDetail, nil
+}

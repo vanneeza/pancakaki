@@ -1,7 +1,6 @@
 package logincontroller
 
 import (
-	"fmt"
 	"net/http"
 	"pancakaki/internal/domain/web"
 	weblogin "pancakaki/internal/domain/web/login"
@@ -68,14 +67,17 @@ func (h *loginController) Login(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, result)
 	} else {
 
+		checkRole := ""
+
 		getOwnerByNoHp, _ := h.ownerService.GetOwnerByNoHp(login.NoHp)
 
-		fmt.Printf("getOwnerByNoHp: %v\n", getOwnerByNoHp)
-		fmt.Scanln()
+		getCustomerByNoHp, _ := h.customerService.ViewOne(0, "", login.NoHp)
 
-		checkRole := ""
-		if getOwnerByNoHp != nil {
+		if getOwnerByNoHp != nil && getCustomerByNoHp.NoHp == "" {
 			checkRole = "owner"
+		}
+		if getOwnerByNoHp == nil && getCustomerByNoHp.NoHp != "" {
+			checkRole = "customer"
 		}
 
 		if checkRole == "" {
@@ -123,11 +125,6 @@ func (h *loginController) Login(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, result)
 
 		} else if checkRole == "customer" {
-
-			getCustomerByNoHp, _ := h.customerService.ViewOne(0, "", login.NoHp)
-			if getOwnerByNoHp != nil {
-				checkRole = "customer"
-			}
 
 			match := helper.CheckPasswordHash(login.Password, getCustomerByNoHp.Password)
 			if !match {

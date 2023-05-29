@@ -47,7 +47,7 @@ func (transactionService *TransactionServiceImpl) MakeOrder(req webtransaction.T
 	virtualAccount := helper.GenerateRandomNumber()
 
 	product, _ := transactionService.ProductRepository.FindProductById(req.ProductId)
-	customer, _ := transactionService.CustomerRepository.FindByIdOrNameOrHp(req.CustomerId, "", "")
+	customer, _ := transactionService.CustomerRepository.FindByIdOrNameOrHp(req.CustomerId, "", "0")
 	storeName, tax, _ := transactionService.Ownerrepository.GetTaxAndStoreOwner(req.ProductId)
 	merkName, _ := transactionService.TransactionRepository.GetMerkNameByProduct(product.Id)
 
@@ -66,7 +66,7 @@ func (transactionService *TransactionServiceImpl) MakeOrder(req webtransaction.T
 		VirtualAccount: int64(virtualAccount),
 	}
 	fmt.Printf("transactionDetail: %v\n", transactionDetail)
-	fmt.Scanln()
+	// fmt.Scanln()
 
 	txDetail, _ := transactionService.TransactionRepository.CreateOrderDetail(&transactionDetail)
 

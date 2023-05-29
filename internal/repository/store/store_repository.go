@@ -13,10 +13,12 @@ import (
 type StoreRepository interface {
 	GetStoreByOwnerId(id int) ([]entity.Store, error)
 	GetStoreByName(name string) (*entity.Store, error)
+	GetTransactionByStoreIdAndOwnerId(storeId int, ownerId int) ([]entity.TransactionStore, error)
 	CreateStore(newStore *entity.Store, tx *sql.Tx) (*entity.Store, error)
 	CreateMainStore(newTransactionStore *webstore.StoreCreateRequest) (*webstore.StoreCreateResponse, error)
 	UpdateStore(updateStore *entity.Store, tx *sql.Tx) (*entity.Store, error)
 	UpdateMainStore(newUpdateStore *webstore.StoreUpdateRequest) (*webstore.StoreCreateResponse, error)
+	UpdatePayment(newUpdateTransaction *entity.TransactionOrderDetail, storeId int, ownerId int) (*entity.TransactionOrderDetail, error)
 	DeleteStore(id int, tx *sql.Tx) error
 	DeleteMainStore(storeid int, ownerId int) error
 }
@@ -153,6 +155,56 @@ func (repo *storeRepository) GetStoreByName(name string) (*entity.Store, error) 
 	return &store, nil
 }
 
+func (repo *storeRepository) GetTransactionByStoreIdAndOwnerId(storeId int, ownerId int) ([]entity.TransactionStore, error) {
+	var storeProducts []entity.TransactionStore
+	rows, err := repo.db.Query(`SELECT tbl_transaction_detail_order.id, tbl_customer.name, tbl_merk.name, tbl_product.id, tbl_product.name, tbl_product.price, tbl_product.shipping_cost,
+	tbl_transaction_order.quantity, tbl_transaction_detail_order.tax, tbl_transaction_detail_order.total_price,
+	tbl_transaction_detail_order.buy_date, tbl_transaction_detail_order.status,tbl_store.name, tbl_transaction_detail_order.virtual_account
+	FROM tbl_transaction_detail_order
+	INNER JOIN tbl_transaction_order ON tbl_transaction_detail_order.id = tbl_transaction_order.detail_order_id
+	INNER JOIN tbl_customer ON tbl_transaction_order.customer_id = tbl_customer.id
+	INNER JOIN tbl_product ON tbl_transaction_order.product_id = tbl_product.id
+	INNER JOIN tbl_store ON tbl_product.store_id = tbl_store.id
+	INNER JOIN tbl_merk ON tbl_product.merk_id = tbl_merk.id
+	WHERE tbl_store.id = $1
+	ORDER BY tbl_transaction_detail_order.status, tbl_transaction_detail_order.virtual_account ASC;`, storeId)
+	// helper.PanicErr(err)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var storeProduct entity.TransactionStore
+		err := rows.Scan(
+			&storeProduct.Id,
+			&storeProduct.CustomerName,
+			&storeProduct.MerkName,
+			&storeProduct.ProductId,
+			&storeProduct.ProductName,
+			&storeProduct.ProductPrice,
+			&storeProduct.ShippingCost,
+			&storeProduct.Qty,
+			&storeProduct.Tax,
+			&storeProduct.TotalPrice,
+			&storeProduct.BuyDate,
+			&storeProduct.Status,
+			&storeProduct.StoreName,
+			&storeProduct.VirtualAccount)
+		if err != nil {
+			return nil, err
+		}
+		storeProducts = append(storeProducts, storeProduct)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return storeProducts, nil
+}
+
 func (repo *storeRepository) UpdateStore(updateStore *entity.Store, tx *sql.Tx) (*entity.Store, error) {
 	stmt, err := repo.db.Prepare("UPDATE tbl_store SET name = $1, no_hp=$2,email=$3,address=$4 WHERE id = $5")
 	if err != nil {
@@ -216,6 +268,21 @@ func (repo *storeRepository) UpdateMainStore(newUpdateStore *webstore.StoreUpdat
 	}
 
 	return &storeRespose, nil
+}
+
+func (repo *storeRepository) UpdatePayment(newUpdateTransaction *entity.TransactionOrderDetail, storeId int, ownerId int) (*entity.TransactionOrderDetail, error) {
+	stmt, err := repo.db.Prepare(`UPDATE tbl_transaction_detail_order SET status = 'on delivery' WHERE id = $1`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update transaction status : %w", err)
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(newUpdateTransaction.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	return newUpdateTransaction, nil
 }
 
 func (repo *storeRepository) DeleteStore(id int, tx *sql.Tx) error {
