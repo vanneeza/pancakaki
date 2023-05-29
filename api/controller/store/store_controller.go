@@ -44,15 +44,34 @@ func (h *storeController) CreateMainStore(ctx *gin.Context) {
 
 	var storeRequest webstore.StoreCreateRequest
 	err := ctx.ShouldBindJSON(&storeRequest)
-	helper.StatusBadRequest(err, ctx)
+	// helper.StatusBadRequest(err, ctx)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusBadRequest,
+			Status:  "BAD_REQUEST",
+			Message: "bad request",
+			Data:    err.Error(),
+		}
+		ctx.JSON(http.StatusBadRequest, result)
+		return
+	}
 
 	storeRequest.OwnerId, _ = strconv.Atoi(ownerId)
 	// storeRequest.NoHp, _ = strconv.Atoi(noHpStore)
 
 	// fmt.Println(storeRequest)
 	newStore, err := h.storeService.CreateMainStore(&storeRequest)
-	helper.InternalServerError(err, ctx)
-
+	// helper.InternalServerError(err, ctx)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "status internal server error",
+			Data:    err.Error(),
+		}
+		ctx.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+		return
+	}
 	result := web.WebResponse{
 		Code:    http.StatusCreated,
 		Status:  "CREATED",
@@ -85,19 +104,17 @@ func (h *storeController) UpdateMainStore(ctx *gin.Context) {
 
 	storeRequest.OwnerId = ownerIdInt
 	storeUpdate, err := h.storeService.UpdateMainStore(&storeRequest)
+	// helper.InternalServerError(err, ctx)
 	if err != nil {
-		// storeId := strconv.Itoa(storeRequest.Id)
 		result := web.WebResponse{
 			Code:    http.StatusInternalServerError,
 			Status:  "INTERNAL_SERVER_ERROR",
-			Message: "Server Error",
+			Message: "status internal server error",
 			Data:    err.Error(),
 		}
-		ctx.JSON(http.StatusOK, result)
+		ctx.JSON(http.StatusInternalServerError, result) //buat ngirim respon
 		return
 	}
-	// helper.InternalServerError(err, ctx)
-
 	storeId := strconv.Itoa(storeRequest.Id)
 	result := web.WebResponse{
 		Code:    http.StatusOK,
@@ -158,8 +175,17 @@ func (h *storeController) GetStoreByOwnerId(ctx *gin.Context) {
 	}
 
 	getStoreByOwnerId, err := h.storeService.GetStoreByOwnerId(ownerIdInt)
-	helper.InternalServerError(err, ctx)
-
+	// helper.InternalServerError(err, ctx)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "status internal server error",
+			Data:    err.Error(),
+		}
+		ctx.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+		return
+	}
 	result := web.WebResponse{
 		Code:    http.StatusOK,
 		Status:  "OK",
