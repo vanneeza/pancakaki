@@ -1,8 +1,6 @@
 package ownercontroller
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 	"pancakaki/internal/domain/entity"
 	"pancakaki/internal/domain/web"
@@ -41,8 +39,7 @@ func (h *ownerHandler) CreateOwner(ctx *gin.Context) {
 	helper.StatusBadRequest(err, ctx)
 
 	getMembershipById, err := h.membershipService.ViewOne(owner.MembershipId)
-	log.Println(getMembershipById, "membershipId")
-	fmt.Scanln()
+
 	helper.InternalServerError(err, ctx)
 	if err != nil {
 		result := web.WebResponse{
@@ -76,8 +73,8 @@ func (h *ownerHandler) CreateOwner(ctx *gin.Context) {
 	getOwnerById, err := h.ownerService.GetOwnerById(newOwner.Id)
 	helper.InternalServerError(err, ctx)
 	// newOwnerId := strconv.Itoa(newOwner.Id)
-	token := jwt.New(jwt.SigningMethodHS256)
 
+	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["id"] = strconv.Itoa(newOwner.Id)
 	claims["role"] = getOwnerById.Role

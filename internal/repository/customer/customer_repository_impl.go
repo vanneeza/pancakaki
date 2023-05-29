@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"pancakaki/internal/domain/entity"
 	"pancakaki/utils/helper"
-	"strconv"
 )
 
 type CustomerRepositoryImpl struct {
@@ -55,15 +54,12 @@ func (r *CustomerRepositoryImpl) FindAll() ([]entity.Customer, error) {
 
 func (r *CustomerRepositoryImpl) FindByIdOrNameOrHp(customerId int, customerName, customerNoHP string) (*entity.Customer, error) {
 	var customer entity.Customer
-	customerNohHpConvert, _ := strconv.Atoi(customerNoHP)
-	fmt.Printf("customerId: %v\n", customerId)
-	fmt.Scanln()
 	stmt, err := r.Db.Prepare("SELECT id, name, no_hp, address, password, role FROM tbl_customer WHERE is_deleted = 'false' AND id = $1 OR name = $2 OR no_hp = $3")
 	if err != nil {
 		return nil, fmt.Errorf("error prepare")
 	}
 	defer stmt.Close()
-	row := stmt.QueryRow(customerId, customerName, customerNohHpConvert)
+	row := stmt.QueryRow(customerId, customerName, customerNoHP)
 	err = row.Scan(&customer.Id, &customer.Name, &customer.NoHp, &customer.Address, &customer.Password, &customer.Role)
 	if err != nil {
 		return nil, fmt.Errorf("customer not found")

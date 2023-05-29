@@ -1,7 +1,6 @@
 package customercontroller
 
 import (
-	"fmt"
 	"net/http"
 	"pancakaki/internal/domain/web"
 	webcustomer "pancakaki/internal/domain/web/customer"
@@ -40,7 +39,6 @@ func (customerController *CustomerControllerImpl) Register(context *gin.Context)
 	helper.InternalServerError(err, context)
 	// newOwnerId := strconv.Itoa(newOwner.Id)
 	token := jwt.New(jwt.SigningMethodHS256)
-
 	claims := token.Claims.(jwt.MapClaims)
 	claims["id"] = strconv.Itoa(getCustomerByNoHp.Id)
 	claims["role"] = getCustomerByNoHp.Role
@@ -49,6 +47,7 @@ func (customerController *CustomerControllerImpl) Register(context *gin.Context)
 
 	var jwtKeyByte = []byte(jwtKey)
 	tokenString, err := token.SignedString(jwtKeyByte)
+
 	helper.InternalServerError(err, context)
 
 	customerResponse.Token = tokenString
@@ -154,8 +153,6 @@ func (customerController *CustomerControllerImpl) Unreg(context *gin.Context) {
 		return
 	}
 
-	fmt.Printf("customerIdInt: %v\n", customerIdInt)
-	fmt.Scanln()
 	customerResponse, err := customerController.customerService.Unreg(customerIdInt, "", "")
 	helper.InternalServerError(err, context)
 

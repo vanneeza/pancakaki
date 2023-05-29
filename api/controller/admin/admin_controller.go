@@ -12,14 +12,4 @@ type AdminController interface {
 	RegisterBank(context *gin.Context)
 	EditBank(context *gin.Context)
 	ViewAllBank(context *gin.Context)
-	ViewOneBank(context *gin.Context)
-
-	ViewTransactionOwnerByName(context *gin.Context)
-	ViewTransactionAllOwner(context *gin.Context)
-
-	ViewAllOwner(context *gin.Context)
-	ViewOwnerByName(context *gin.Context)
-	UnregOwner(context *gin.Context)
-
-	// ViewTransactionCustomerById(context *gin.Context)
 }

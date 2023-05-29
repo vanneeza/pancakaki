@@ -1,8 +1,6 @@
 package admincontroller
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 	"pancakaki/internal/domain/web"
 	webadmin "pancakaki/internal/domain/web/admin"
@@ -10,7 +8,9 @@ import (
 	adminservice "pancakaki/internal/service/admin"
 	"pancakaki/utils/helper"
 	"strconv"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,25 +24,69 @@ func NewAdminController(adminService adminservice.AdminService) AdminController 
 	}
 }
 
+var jwtKey = "secret_key"
+
 func (adminController *AdminControllerImpl) Register(context *gin.Context) {
 	var admin webadmin.AdminCreateRequest
 
 	err := context.ShouldBindJSON(&admin)
 	helper.InternalServerError(err, context)
-	adminResponse, err := adminController.adminService.Register(admin)
+	adminResponse, _ := adminController.adminService.Register(admin)
+
+	getAdminByUsername, err := adminController.adminService.ViewOne(0, admin.Username)
 	helper.InternalServerError(err, context)
 
-	web_response := web.WebResponse{
+	token := jwt.New(jwt.SigningMethodHS256)
+	claims := token.Claims.(jwt.MapClaims)
+	claims["id"] = strconv.Itoa(getAdminByUsername.Id)
+	claims["role"] = getAdminByUsername.Role
+	claims["nohp"] = getAdminByUsername.Username
+	claims["exp"] = time.Now().Add(time.Minute * 25).Unix()
+
+	var jwtKeyByte = []byte(jwtKey)
+	tokenString, err := token.SignedString(jwtKeyByte)
+
+	helper.InternalServerError(err, context)
+
+	adminResponse.Token = tokenString
+	webResponse := web.WebResponse{
 		Code:    http.StatusCreated,
 		Status:  "CREATED",
-		Message: "the data has been successfully Add",
+		Message: "the admin has successfully registered",
 		Data:    adminResponse,
 	}
-	context.JSON(http.StatusCreated, gin.H{"admin": web_response})
+
+	context.JSON(http.StatusCreated, gin.H{"admin": webResponse})
+
 }
 
 func (adminController *AdminControllerImpl) ViewAll(context *gin.Context) {
+
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	role := claims["role"].(string)
+	if role != "admin" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "user is unauthorized",
+			Data:    "NULL",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
+
 	adminResponse, err := adminController.adminService.ViewAll()
+	if len(adminResponse) == 0 {
+		web_response := web.WebResponse{
+			Code:    http.StatusNotFound,
+			Status:  "NOT_FOUND",
+			Message: "admin data not found",
+			Data:    err.Error(),
+		}
+		context.JSON(http.StatusOK, gin.H{"admin": web_response})
+		return
+	}
+
 	helper.InternalServerError(err, context)
 
 	web_response := web.WebResponse{
@@ -55,9 +99,32 @@ func (adminController *AdminControllerImpl) ViewAll(context *gin.Context) {
 }
 
 func (adminController *AdminControllerImpl) ViewOne(context *gin.Context) {
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	// adminId := claims["id"].(string)
+	// adminIdInt, _ := strconv.Atoi(adminId)
+	role := claims["role"].(string)
+	if role != "admin" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "user is unauthorized",
+			Data:    "NULL",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
 	adminId, _ := strconv.Atoi(context.Param("id"))
-	adminResponse, err := adminController.adminService.ViewOne(adminId)
-	helper.InternalServerError(err, context)
+	adminResponse, err := adminController.adminService.ViewOne(adminId, "")
+	if err != nil {
+		webResponses := web.WebResponse{
+			Code:    http.StatusBadRequest,
+			Status:  "BAD_REQUEST",
+			Message: "admin data not found",
+			Data:    err.Error(),
+		}
+		context.JSON(http.StatusOK, gin.H{"admin": webResponses})
+		return
+	}
 
 	webResponses := web.WebResponse{
 		Code:    http.StatusOK,
@@ -69,11 +136,26 @@ func (adminController *AdminControllerImpl) ViewOne(context *gin.Context) {
 }
 
 func (adminController *AdminControllerImpl) Edit(context *gin.Context) {
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	// adminId := claims["id"].(string)
+	// adminIdInt, _ := strconv.Atoi(adminId)
+	role := claims["role"].(string)
+	if role != "admin" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "user is unauthorized",
+			Data:    "NUL",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
+	adminId, _ := strconv.Atoi(context.Param("id"))
+
 	var admin webadmin.AdminUpdateRequest
+
 	err := context.ShouldBindJSON(&admin)
 	helper.InternalServerError(err, context)
-
-	adminId, _ := strconv.Atoi(context.Param("id"))
 	admin.Id = adminId
 
 	adminResponse, err := adminController.adminService.Edit(admin)
@@ -89,9 +171,34 @@ func (adminController *AdminControllerImpl) Edit(context *gin.Context) {
 }
 
 func (adminController *AdminControllerImpl) Unreg(context *gin.Context) {
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	// adminId := claims["id"].(string)
+	// adminIdInt, _ := strconv.Atoi(adminId)
+	role := claims["role"].(string)
+	if role != "admin" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "user is unauthorized",
+			Data:    "NULL",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
+
 	adminId, _ := strconv.Atoi(context.Param("id"))
-	adminResponse, err := adminController.adminService.Unreg(adminId)
-	helper.InternalServerError(err, context)
+	s := strconv.Itoa(adminId)
+	adminResponse, err := adminController.adminService.Unreg(adminId, "")
+	if err != nil {
+		webResponses := web.WebResponse{
+			Code:    http.StatusBadRequest,
+			Status:  "BAD_REQUEST",
+			Message: "admin with ID " + s + " not found",
+			Data:    err.Error(),
+		}
+		context.JSON(http.StatusOK, gin.H{"admin": webResponses})
+		return
+	}
 
 	webResponses := web.WebResponse{
 		Code:    http.StatusOK,
@@ -103,26 +210,36 @@ func (adminController *AdminControllerImpl) Unreg(context *gin.Context) {
 }
 
 func (adminController *AdminControllerImpl) RegisterBank(context *gin.Context) {
+
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	adminId := claims["id"].(string)
+	adminIdInt, _ := strconv.Atoi(adminId)
+	role := claims["role"].(string)
+	if role != "admin" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "user is unauthorized",
+			Data:    "NULL",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
+
 	var bank webbank.BankCreateRequest
 	var bankAdmin webbank.BankAdminCreateRequest
 
-	adminId, _ := strconv.Atoi(context.Param("id"))
-	bankAdmin.AdminId = adminId
+	bankAdmin.AdminId = adminIdInt
 
 	err := context.ShouldBindJSON(&bank)
 	helper.InternalServerError(err, context)
-
-	log.Println(bankAdmin, "Ini bannk controler")
-	log.Println(bank, "Ini bank control")
-	fmt.Scanln()
-
 	adminResponse, err := adminController.adminService.RegisterBank(bank, bankAdmin)
 	helper.InternalServerError(err, context)
 
 	web_response := web.WebResponse{
 		Code:    http.StatusCreated,
 		Status:  "CREATED",
-		Message: "the data has been successfully Add",
+		Message: "the bank has been successfully Add",
 		Data:    adminResponse,
 	}
 	context.JSON(http.StatusCreated, gin.H{"admin/bank": web_response})
@@ -130,13 +247,12 @@ func (adminController *AdminControllerImpl) RegisterBank(context *gin.Context) {
 
 func (adminController *AdminControllerImpl) EditBank(context *gin.Context) {
 	var bank webbank.BankUpdateRequest
-	var bankAdmin webbank.BankAdminUpdateRequest
 	err := context.ShouldBindJSON(&bank)
 	helper.InternalServerError(err, context)
 
-	bankAdmin.AdminId, _ = strconv.Atoi(context.Param("id"))
+	bank.Id, _ = strconv.Atoi(context.Param("id"))
 
-	bankResponse, err := adminController.adminService.EditBank(bank, bankAdmin)
+	bankResponse, err := adminController.adminService.EditBank(bank)
 	helper.InternalServerError(err, context)
 
 	webResponse := web.WebResponse{
@@ -160,100 +276,3 @@ func (adminController *AdminControllerImpl) ViewAllBank(context *gin.Context) {
 	}
 	context.JSON(http.StatusOK, gin.H{"admin/bank": web_response})
 }
-
-func (adminController *AdminControllerImpl) ViewOneBank(context *gin.Context) {
-
-	bankName := context.Param("name")
-	bankResponse, err := adminController.adminService.ViewOneBank(bankName)
-	helper.InternalServerError(err, context)
-
-	web_response := web.WebResponse{
-		Code:    http.StatusOK,
-		Status:  "OK",
-		Message: "bank data by bank name",
-		Data:    bankResponse,
-	}
-	context.JSON(http.StatusOK, gin.H{"admin/bank": web_response})
-}
-
-func (adminController *AdminControllerImpl) ViewTransactionAllOwner(context *gin.Context) {
-	adminResponse, err := adminController.adminService.ViewTransactionAllOwner()
-	helper.InternalServerError(err, context)
-
-	web_response := web.WebResponse{
-		Code:    http.StatusOK,
-		Status:  "OK",
-		Message: "list of all owner transaction data",
-		Data:    adminResponse,
-	}
-	context.JSON(http.StatusOK, gin.H{"admin/transaction_history": web_response})
-}
-
-func (adminController *AdminControllerImpl) ViewTransactionOwnerByName(context *gin.Context) {
-	ownerName := context.Param("name")
-	transactionOwnerResponse, err := adminController.adminService.ViewTransactionOwnerByName(ownerName)
-	helper.InternalServerError(err, context)
-
-	webResponses := web.WebResponse{
-		Code:    http.StatusOK,
-		Status:  "OK",
-		Message: "transaction history owner by name",
-		Data:    transactionOwnerResponse,
-	}
-	context.JSON(http.StatusOK, gin.H{"admin/transaction_history": webResponses})
-}
-
-func (adminController *AdminControllerImpl) ViewAllOwner(context *gin.Context) {
-	ownerResponse, err := adminController.adminService.ViewAllOwner()
-	helper.InternalServerError(err, context)
-
-	web_response := web.WebResponse{
-		Code:    http.StatusOK,
-		Status:  "OK",
-		Message: "list of all owner profile data",
-		Data:    ownerResponse,
-	}
-	context.JSON(http.StatusOK, gin.H{"admin/owner/profile": web_response})
-}
-
-func (adminController *AdminControllerImpl) ViewOwnerByName(context *gin.Context) {
-	ownerName := context.Param("name")
-	transactionOwnerResponse, err := adminController.adminService.ViewOwnerByName(ownerName)
-	helper.InternalServerError(err, context)
-
-	webResponses := web.WebResponse{
-		Code:    http.StatusOK,
-		Status:  "OK",
-		Message: "list of owner profile data by name",
-		Data:    transactionOwnerResponse,
-	}
-	context.JSON(http.StatusOK, gin.H{"admin/owner/profile": webResponses})
-}
-
-func (adminController *AdminControllerImpl) UnregOwner(context *gin.Context) {
-	idOwner, _ := strconv.Atoi(context.Param("id"))
-	transactionOwnerResponse, err := adminController.adminService.UnregOwner(idOwner)
-	helper.InternalServerError(err, context)
-
-	webResponses := web.WebResponse{
-		Code:    http.StatusOK,
-		Status:  "OK",
-		Message: "owner data has been deleted",
-		Data:    transactionOwnerResponse,
-	}
-	context.JSON(http.StatusOK, gin.H{"admin/owner/profile": webResponses})
-}
-
-// func (adminController *AdminControllerImpl) ViewTransactionCustomerById(context *gin.Context) {
-// 	idCustomer, _ := strconv.Atoi(context.Param("id"))
-// 	transactionOwnerResponse, err := adminController.adminService.ViewTransactionCustomerById(idCustomer)
-// 	helper.InternalServerError(err, context)
-
-// 	webResponses := web.WebResponse{
-// 		Code:    http.StatusOK,
-// 		Status:  "OK",
-// 		Message: "list of transaction customer by id",
-// 		Data:    transactionOwnerResponse,
-// 	}
-// 	context.JSON(http.StatusOK, gin.H{"admin/owner/profile": webResponses})
-// }

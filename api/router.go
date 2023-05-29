@@ -95,23 +95,27 @@ func Run(db *sql.DB) *gin.Engine {
 	transactionRepositoryCha := transactionrepository.NewTransactionRepository(db)
 	transactionServiceCHa := transactionservice.NewTransactionService(transactionRepositoryCha, productRepository, customerRepository, ownerRepository, chartRepository)
 	transactionController := transactioncontroller.NewTransactionController(transactionServiceCHa)
-	loginController := logincontroller.NewLoginController(ownerService, customerService)
+	loginController := logincontroller.NewLoginController(ownerService, customerService, adminService)
 
 	var jwtKey = "secret_key"
 	pancakaki := r.Group("pancakaki/v1/")
+	pancakaki.POST("/login", loginController.Login)
 
-	pancakaki.GET("admins/", adminController.ViewAll)
-	admin := pancakaki.Group("/admin")
+	pancakaki.POST("register/owner", ownerController.CreateOwner)
+	pancakaki.POST("register/customer", customerController.Register)
+	pancakaki.POST("register/admin", adminController.Register)
+
+	admin := pancakaki.Group("/admins")
+	admin.Use(helper.AuthMiddleware(jwtKey))
 	{
-		admin.POST("/", adminController.Register)
+		admin.GET("/", adminController.ViewAll)
 		admin.GET("/:id", adminController.ViewOne)
 		admin.PUT("/:id", adminController.Edit)
 		admin.DELETE("/:id", adminController.Unreg)
 
-		admin.POST("/bank/:id", adminController.RegisterBank)
+		admin.POST("/bank/", adminController.RegisterBank)
 		admin.PUT("/bank/:id", adminController.EditBank)
 		admin.GET("/banks/", adminController.ViewAllBank)
-		admin.GET("/bank/:name", adminController.ViewOneBank)
 
 		admin.POST("/membership/", membershipController.Register)
 		admin.GET("/memberships/", membershipController.ViewAll)
@@ -119,17 +123,8 @@ func Run(db *sql.DB) *gin.Engine {
 		admin.PUT("/membership/:id", membershipController.Edit)
 		admin.DELETE("/membership/:id", membershipController.Unreg)
 
-		admin.GET("/transaction_history/owners", adminController.ViewTransactionAllOwner)
-		admin.GET("/transaction_history/owner/:name", adminController.ViewTransactionOwnerByName)
-		// admin.GET("/transaction_history/customer/:id", adminController.ViewTransactionCustomerById)
-
-		admin.GET("/owner/profiles/", adminController.ViewAllOwner)
-		admin.DELETE("/owner/profile/:id", adminController.UnregOwner)
-		admin.GET("/owner/profile/:name", adminController.ViewOwnerByName)
-
 		admin.GET("/customer/profiles/", customerController.ViewAll)
 		admin.GET("/customer/profile/:name", customerController.ViewOne)
-
 		admin.POST("/merk/", merkcontroller.Register)
 		admin.GET("/merks/", merkcontroller.ViewAll)
 		admin.GET("/merk/:id", merkcontroller.ViewOne)
@@ -137,9 +132,6 @@ func Run(db *sql.DB) *gin.Engine {
 		admin.DELETE("/merk/:id", merkcontroller.Unreg)
 	}
 
-	pancakaki.POST("/login", loginController.Login)
-	pancakaki.POST("/register/owner", ownerController.CreateOwner)
-	pancakaki.POST("register/customer", customerController.Register)
 	pancakaki.GET("/ownerhp/:hp", ownerController.GetOwnerByNoHp)
 
 	owner := pancakaki.Group("/owner")
@@ -204,6 +196,7 @@ func Run(db *sql.DB) *gin.Engine {
 
 		//------- NOTIFICATION ------
 		customer.GET("/notification", customerController.Notification)
+
 		////------------------- TEST PAYMENTGATEWAY : PROSESS --------------//
 		// customer.POST("/payment", transactionController.CreatePaymentIntent)
 	}
