@@ -64,8 +64,16 @@ func (merkController *MerkControllerImpl) ViewAll(context *gin.Context) {
 func (merkController *MerkControllerImpl) ViewOne(context *gin.Context) {
 	merkId, _ := strconv.Atoi(context.Param("id"))
 	merkResponse, err := merkController.merkService.ViewOne(merkId)
-	helper.InternalServerError(err, context)
-
+	if err != nil {
+		webResponses := web.WebResponse{
+			Code:    http.StatusNotFound,
+			Status:  "STATUS_NOT_FOUND",
+			Message: "merk data not found",
+			Data:    err.Error(),
+		}
+		context.JSON(http.StatusNotFound, gin.H{"merk": webResponses})
+		return
+	}
 	webResponses := web.WebResponse{
 		Code:    http.StatusOK,
 		Status:  "OK",
@@ -98,7 +106,16 @@ func (merkController *MerkControllerImpl) Edit(context *gin.Context) {
 func (merkController *MerkControllerImpl) Unreg(context *gin.Context) {
 	merkId, _ := strconv.Atoi(context.Param("id"))
 	merkResponse, err := merkController.merkService.Unreg(merkId)
-	helper.InternalServerError(err, context)
+	if err != nil {
+		webResponses := web.WebResponse{
+			Code:    http.StatusNotFound,
+			Status:  "STATUS_NOT_FOUND",
+			Message: "merk id not found",
+			Data:    merkResponse,
+		}
+		context.JSON(http.StatusNotFound, gin.H{"merk": webResponses})
+		return
+	}
 
 	webResponses := web.WebResponse{
 		Code:    http.StatusOK,

@@ -59,7 +59,7 @@ func (repo *merkRepository) FindAllMerk() ([]entity.Merk, error) {
 // FindMerkById implements MerkRepository
 func (repo *merkRepository) FindMerkById(id int) (*entity.Merk, error) {
 	var merk entity.Merk
-	stmt, err := repo.db.Prepare("SELECT id, name FROM tbl_merk WHERE id = $1")
+	stmt, err := repo.db.Prepare("SELECT id, name FROM tbl_merk WHERE id = $1 AND is_deleted = 'false'")
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +96,7 @@ func (repo *merkRepository) FindMerkByName(name string) (*entity.Merk, error) {
 
 // InsertMerk implements MerkRepository
 func (repo *merkRepository) InsertMerk(newMerk *entity.Merk) (*entity.Merk, error) {
+
 	stmt, err := repo.db.Prepare("INSERT INTO tbl_merk (name) VALUES ($1) RETURNING id")
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert merk : %w", err)
@@ -103,6 +104,7 @@ func (repo *merkRepository) InsertMerk(newMerk *entity.Merk) (*entity.Merk, erro
 	defer stmt.Close()
 
 	err = stmt.QueryRow(newMerk.Name).Scan(&newMerk.Id)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert merk : %w", err)
 	}

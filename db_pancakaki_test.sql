@@ -15,7 +15,7 @@ CREATE TABLE "tbl_bank" (
 );
 
 CREATE TABLE "tbl_bank_admin" (
-  "id" integer PRIMARY KEY,
+  "id" serial PRIMARY KEY,
   "admin_id" integer,
   "bank_id" integer
 );

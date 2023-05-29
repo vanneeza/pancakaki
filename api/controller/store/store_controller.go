@@ -85,7 +85,18 @@ func (h *storeController) UpdateMainStore(ctx *gin.Context) {
 
 	storeRequest.OwnerId = ownerIdInt
 	storeUpdate, err := h.storeService.UpdateMainStore(&storeRequest)
-	helper.InternalServerError(err, ctx)
+	if err != nil {
+		// storeId := strconv.Itoa(storeRequest.Id)
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "Server Error",
+			Data:    err.Error(),
+		}
+		ctx.JSON(http.StatusOK, result)
+		return
+	}
+	// helper.InternalServerError(err, ctx)
 
 	storeId := strconv.Itoa(storeRequest.Id)
 	result := web.WebResponse{

@@ -158,10 +158,6 @@ func Run(db *sql.DB) *gin.Engine {
 	{
 		product.POST("/", productController.InsertMainProduct)
 		product.GET("/", productController.FindAllProduct)
-		// product.GET("/:id", productController.FindProductById)
-		// product.GET("/name/:name", productController.FindProductByName)
-		// product.PUT("/", productController.UpdateProduct)
-		// product.PUT("/:id", productController.DeleteProduct)
 	}
 
 	productImage := pancakaki.Group("/product-image")
@@ -194,7 +190,7 @@ func Run(db *sql.DB) *gin.Engine {
 		customer.PUT("/chart/:id", chartController.Edit)
 		customer.DELETE("/chart/:id", chartController.Unreg)
 
-		//------- NOTIFICATION ------
+		//------- NOTIFICATION ------ //
 		customer.GET("/notification", customerController.Notification)
 
 		////------------------- TEST PAYMENTGATEWAY : PROSESS --------------//

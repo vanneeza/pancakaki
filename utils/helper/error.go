@@ -18,10 +18,10 @@ func InternalServerError(err error, context *gin.Context) {
 		result := web.WebResponse{
 			Code:    http.StatusInternalServerError,
 			Status:  "INTERNAL_SERVER_ERROR",
-			Message: "status internal server error",
-			Data:    err.Error(),
+			Message: "Error",
+			Data:    "NULL",
 		}
-		context.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+		context.JSON(http.StatusInternalServerError, result)
 		return
 	}
 }

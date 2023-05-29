@@ -16,6 +16,7 @@ func NewMembershipRepository(Db *sql.DB) MembershipRepository {
 }
 
 func (r *MembershipRepositoryImpl) Create(membership *entity.Membership) (*entity.Membership, error) {
+
 	stmt, err := r.Db.Prepare("INSERT INTO tbl_membership (name, tax, price) VALUES ($1, $2, $3) RETURNING id")
 	if err != nil {
 		return nil, err
@@ -52,7 +53,7 @@ func (r *MembershipRepositoryImpl) FindAll() ([]entity.Membership, error) {
 
 func (r *MembershipRepositoryImpl) FindById(id int) (*entity.Membership, error) {
 	var membership entity.Membership
-	stmt, err := r.Db.Prepare("SELECT id, name, tax, price FROM tbl_membership WHERE id = $1")
+	stmt, err := r.Db.Prepare("SELECT id, name, tax, price FROM tbl_membership WHERE id = $1 and is_deleted = 'FALSE'")
 	if err != nil {
 		return nil, err
 	}

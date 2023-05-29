@@ -1,7 +1,7 @@
 package logincontroller
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"pancakaki/internal/domain/web"
 	weblogin "pancakaki/internal/domain/web/login"
@@ -33,8 +33,6 @@ func (h *loginController) Login(ctx *gin.Context) {
 
 	err := ctx.ShouldBindJSON(&login)
 	helper.InternalServerError(err, ctx)
-
-	log.Println(login)
 
 	if login.Username != "" {
 		getAdminByUsername, _ := h.adminService.ViewOne(0, login.Username)
@@ -71,15 +69,13 @@ func (h *loginController) Login(ctx *gin.Context) {
 	} else {
 
 		getOwnerByNoHp, _ := h.ownerService.GetOwnerByNoHp(login.NoHp)
-		getCustomerByNoHp, _ := h.customerService.ViewOne(0, "", login.NoHp)
+
+		fmt.Printf("getOwnerByNoHp: %v\n", getOwnerByNoHp)
+		fmt.Scanln()
 
 		checkRole := ""
-		if getCustomerByNoHp.Name == "" && getOwnerByNoHp != nil {
+		if getOwnerByNoHp != nil {
 			checkRole = "owner"
-		}
-
-		if getCustomerByNoHp.Name != "" && getOwnerByNoHp == nil {
-			checkRole = "customer"
 		}
 
 		if checkRole == "" {
@@ -125,7 +121,14 @@ func (h *loginController) Login(ctx *gin.Context) {
 				Data:    tokenString,
 			}
 			ctx.JSON(http.StatusOK, result)
+
 		} else if checkRole == "customer" {
+
+			getCustomerByNoHp, _ := h.customerService.ViewOne(0, "", login.NoHp)
+			if getOwnerByNoHp != nil {
+				checkRole = "customer"
+			}
+
 			match := helper.CheckPasswordHash(login.Password, getCustomerByNoHp.Password)
 			if !match {
 				result := web.WebResponse{
