@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"pancakaki/internal/domain/entity"
-	"pancakaki/utils/helper"
 )
 
 type CustomerRepositoryImpl struct {
@@ -113,7 +112,10 @@ func (r *CustomerRepositoryImpl) FindTransactionCustomerById(customerId, virtual
 	INNER JOIN tbl_merk ON tbl_product.merk_id = tbl_merk.id
 	WHERE tbl_customer.id = $1 OR tbl_transaction_detail_order.virtual_account = $2
 	ORDER BY tbl_transaction_detail_order.status, tbl_transaction_detail_order.virtual_account ASC;`, customerId, virtualAccount)
-	helper.PanicErr(err)
+	// helper.PanicErr(err)
+	if err != nil {
+		return nil, err
+	}
 
 	defer rows.Close()
 

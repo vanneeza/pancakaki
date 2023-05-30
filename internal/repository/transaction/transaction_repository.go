@@ -9,6 +9,6 @@ type TransactionRepository interface {
 	CustomerPayment(payment *entity.Payment) (*entity.Payment, error)
 	UpdatePhotoAndStatus(TransactionOrderDetail *entity.TransactionOrderDetail) (*entity.TransactionOrderDetail, error)
 	// FindAll() ([]entity.TransactionOrder, error)
-	// FindById(id int) (*entity.TransactionOrder, error)
+	FindById(id int) (*entity.TransactionOrderDetail, error)
 	// Delete(transactionOrderId int) error
 }

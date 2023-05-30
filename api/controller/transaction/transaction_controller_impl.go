@@ -32,10 +32,30 @@ func (TransactionController *TransactionControllerImpl) MakeOrder(context *gin.C
 	var Transaction webtransaction.TransactionOrderCreateRequest
 
 	err := context.ShouldBind(&Transaction)
-	helper.InternalServerError(err, context)
+	// helper.InternalServerError(err, context)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "status internal server error",
+			Data:    err.Error(),
+		}
+		context.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+		return
+	}
 
 	TransactionResponse, err := TransactionController.TransactionService.MakeOrder(Transaction)
-	helper.InternalServerError(err, context)
+	// helper.InternalServerError(err, context)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "status internal server error",
+			Data:    err.Error(),
+		}
+		context.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+		return
+	}
 
 	webResponse := web.WebResponse{
 		Code:    http.StatusCreated,
@@ -57,7 +77,7 @@ func (TransactionController *TransactionControllerImpl) CustomerPayment(context 
 
 	CustomerPayment.Transaction_detail_order_Id = paymentId
 	log.Println(CustomerPayment)
-	fmt.Scanln()
+	// fmt.Scanln()
 
 	// Mengambil file foto yang diupload
 	file, err := context.FormFile("photo")

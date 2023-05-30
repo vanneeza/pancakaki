@@ -70,10 +70,12 @@ func Run(db *sql.DB) *gin.Engine {
 	ownerService := ownerservice.NewOwnerService(ownerRepository, customerRepository)
 	ownerController := ownercontroller.NewOwnerHandler(ownerService, membershipService, bankService)
 
+	transactionRepositoryCha := transactionrepository.NewTransactionRepository(db)
+
 	productRepository := productrepository.NewProductRepository(db, productImageRepository)
 	storeRepository := storerepository.NewStoreRepository(db, bankStoreRepository, productRepository)
-	storeService := storeservice.NewStoreService(storeRepository, bankRepository)
-	storeController := storecontroller.NewStoreHandler(storeService, ownerService)
+	storeService := storeservice.NewStoreService(storeRepository, bankRepository, transactionRepositoryCha)
+	storeController := storecontroller.NewStoreHandler(storeService)
 
 	productService := productservice.NewProductService(productRepository, productImageRepository, storeRepository)
 	productController := productcontroller.NewProductHandler(productService, storeService, productImageService)
@@ -92,7 +94,6 @@ func Run(db *sql.DB) *gin.Engine {
 	chartService := chartservice.NewChartService(chartRepository, productRepository)
 	chartController := chartcontroller.NewChartController(chartService)
 
-	transactionRepositoryCha := transactionrepository.NewTransactionRepository(db)
 	transactionServiceCHa := transactionservice.NewTransactionService(transactionRepositoryCha, productRepository, customerRepository, ownerRepository, chartRepository)
 	transactionController := transactioncontroller.NewTransactionController(transactionServiceCHa)
 	loginController := logincontroller.NewLoginController(ownerService, customerService, adminService)
@@ -152,6 +153,11 @@ func Run(db *sql.DB) *gin.Engine {
 		owner.GET("/store/:storeid/product/:productid", productController.FindProductByStoreIdOwnerIdProductId)
 		owner.PUT("/store/product", productController.UpdateMainProduct)
 		owner.DELETE("/store/:storeid/product/:productid", productController.DeleteMainProduct)
+		//notification
+		owner.GET("/store/:storeid/notifications", storeController.GetTransactionByStoreId)
+		//payment
+		owner.POST("/payment", ownerController.PaymentOwner)
+		owner.PUT("/store/:storeid/payment/:transactionid", storeController.UpdatePayment)
 	}
 
 	product := pancakaki.Group("/products")
