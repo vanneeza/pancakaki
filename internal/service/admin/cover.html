@@ -55,7 +55,7 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">pancakaki/internal/service/admin/admin_service_impl.go (25.5%)</option>
+				<option value="file0">pancakaki/internal/service/admin/admin_service_impl.go (72.3%)</option>
 				
 				</select>
 			</div>
@@ -140,13 +140,13 @@ func (adminService *AdminServiceImpl) ViewAll() ([]webadmin.AdminResponse, error
         <span class="cov8" title="1">return adminResponse, nil</span>
 }
 
-func (adminService *AdminServiceImpl) ViewOne(adminId int, username string) (webadmin.AdminResponse, error) <span class="cov0" title="0">{
+func (adminService *AdminServiceImpl) ViewOne(adminId int, username string) (webadmin.AdminResponse, error) <span class="cov8" title="1">{
         admin, err := adminService.AdminRepository.FindById(adminId, username)
         if err != nil </span><span class="cov0" title="0">{
                 return webadmin.AdminResponse{}, errors.New("NULL")
         }</span>
 
-        <span class="cov0" title="0">adminResponse := webadmin.AdminResponse{
+        <span class="cov8" title="1">adminResponse := webadmin.AdminResponse{
                 Id:       admin.Id,
                 Username: admin.Username,
                 Password: admin.Password,
@@ -157,7 +157,7 @@ func (adminService *AdminServiceImpl) ViewOne(adminId int, username string) (web
         return adminResponse, nil</span>
 }
 
-func (adminService *AdminServiceImpl) Edit(req webadmin.AdminUpdateRequest) (webadmin.AdminResponse, error) <span class="cov0" title="0">{
+func (adminService *AdminServiceImpl) Edit(req webadmin.AdminUpdateRequest) (webadmin.AdminResponse, error) <span class="cov8" title="1">{
         encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
         admin := entity.Admin{
                 Id:       req.Id,
@@ -179,19 +179,19 @@ func (adminService *AdminServiceImpl) Edit(req webadmin.AdminUpdateRequest) (web
         return adminResponse, nil
 }</span>
 
-func (adminService *AdminServiceImpl) Unreg(adminId int, username string) (webadmin.AdminResponse, error) <span class="cov0" title="0">{
+func (adminService *AdminServiceImpl) Unreg(adminId int, username string) (webadmin.AdminResponse, error) <span class="cov8" title="1">{
 
         adminData, err := adminService.AdminRepository.FindById(adminId, username)
         if err != nil </span><span class="cov0" title="0">{
                 return webadmin.AdminResponse{}, errors.New("NULL")
         }</span>
 
-        <span class="cov0" title="0">err = adminService.AdminRepository.Delete(adminId)
+        <span class="cov8" title="1">err = adminService.AdminRepository.Delete(adminId)
         if err != nil </span><span class="cov0" title="0">{
                 return webadmin.AdminResponse{}, errors.New("NULL")
         }</span>
 
-        <span class="cov0" title="0">adminResponse := webadmin.AdminResponse{
+        <span class="cov8" title="1">adminResponse := webadmin.AdminResponse{
                 Id:       adminData.Id,
                 Username: adminData.Username,
                 Password: adminData.Password,
@@ -246,13 +246,13 @@ func (adminService *AdminServiceImpl) EditBank(req webbank.BankUpdateRequest) (w
         }
         return bankResponse, nil
 }</span>
-func (adminService *AdminServiceImpl) ViewAllBank() ([]webbank.BankResponse, error) <span class="cov0" title="0">{
+func (adminService *AdminServiceImpl) ViewAllBank() ([]webbank.BankResponse, error) <span class="cov8" title="1">{
 
         bankData, err := adminService.BankRepository.FindAll()
         helper.PanicErr(err)
 
         bankResponse := make([]webbank.BankResponse, len(bankData))
-        for i, bank := range bankData </span><span class="cov0" title="0">{
+        for i, bank := range bankData </span><span class="cov8" title="1">{
                 bankResponse[i] = webbank.BankResponse{
                         Id:          bank.Id,
                         Name:        bank.Name,
@@ -260,7 +260,7 @@ func (adminService *AdminServiceImpl) ViewAllBank() ([]webbank.BankResponse, err
                         BankAccount: bank.BankAccount,
                 }
         }</span>
-        <span class="cov0" title="0">return bankResponse, nil</span>
+        <span class="cov8" title="1">return bankResponse, nil</span>
 }
 </pre>
 		
