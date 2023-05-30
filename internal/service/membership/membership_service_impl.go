@@ -1,6 +1,7 @@
 package membershipservice
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"pancakaki/internal/domain/entity"
@@ -59,7 +60,10 @@ func (membershipService *MembershipServiceImpl) ViewAll() ([]webmembership.Membe
 func (membershipService *MembershipServiceImpl) ViewOne(membershipId int) (webmembership.MembershipResponse, error) {
 
 	membership, err := membershipService.MembershipRepository.FindById(membershipId)
-	helper.PanicErr(err)
+	// helper.PanicErr(err)
+	if err != nil {
+		return webmembership.MembershipResponse{}, errors.New("membership not found")
+	}
 
 	membershipResponse := webmembership.MembershipResponse{
 		Id:    membership.Id,

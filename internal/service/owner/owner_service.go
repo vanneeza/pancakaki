@@ -24,6 +24,21 @@ type ownerService struct {
 }
 
 func (s *ownerService) CreateOwner(newOwner *entity.Owner) (*entity.Owner, error) {
+	if newOwner.Name == "" {
+		return nil, errors.New("name is required")
+	}
+	if newOwner.NoHp == "" {
+		return nil, errors.New("no hp is required")
+	}
+	if newOwner.Email == "" {
+		return nil, errors.New("email is required")
+	}
+	if newOwner.Password == "" {
+		return nil, errors.New("password is required")
+	}
+	if newOwner.MembershipId == 0 {
+		return nil, errors.New("membership is required")
+	}
 	if len(newOwner.NoHp) < 11 || len(newOwner.NoHp) > 12 {
 		return nil, errors.New("length no hp " + newOwner.NoHp + " at least 12")
 	}

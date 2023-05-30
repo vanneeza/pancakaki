@@ -51,7 +51,7 @@ func (h *ownerHandler) CreateOwner(ctx *gin.Context) {
 
 	getMembershipById, err := h.membershipService.ViewOne(owner.MembershipId)
 
-	helper.InternalServerError(err, ctx)
+	// helper.InternalServerError(err, ctx)
 	if err != nil {
 		result := web.WebResponse{
 			Code:    http.StatusInternalServerError,
@@ -66,7 +66,7 @@ func (h *ownerHandler) CreateOwner(ctx *gin.Context) {
 	// getBankAdminById, err := h.bankService.GetBankAdminById(1)
 	// helper.InternalServerError(err, ctx)
 
-	// fmt.Println(getBankAdminById)
+	// log.Println(owner)
 
 	newOwner, err := h.ownerService.CreateOwner(&owner)
 	// helper.InternalServerError(err, ctx)

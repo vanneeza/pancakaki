@@ -38,7 +38,7 @@ func (repo *ownerRepository) CreateOwner(newOwner *entity.Owner) (*entity.Owner,
 
 func (repo *ownerRepository) GetOwnerByNoHp(noHp string) (*entity.Owner, error) {
 	var owner entity.Owner
-	stmt, err := repo.db.Prepare("SELECT id,name,no_hp,email,password,membership_id, role FROM tbl_owner WHERE no_hp = $1")
+	stmt, err := repo.db.Prepare("SELECT id,name,no_hp,email,password,membership_id,role FROM tbl_owner WHERE no_hp = $1")
 	if err != nil {
 		return nil, err
 	}
@@ -74,13 +74,13 @@ func (repo *ownerRepository) GetOwnerById(id int) (*entity.Owner, error) {
 
 func (repo *ownerRepository) GetOwnerByEmail(email string) (*entity.Owner, error) {
 	var owner entity.Owner
-	stmt, err := repo.db.Prepare("SELECT id,name,no_hp,email,password,membership_id FROM tbl_owner WHERE email = $1")
+	stmt, err := repo.db.Prepare("SELECT id,name,no_hp,email,password,membership_id,role FROM tbl_owner WHERE email = $1")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
-	err = stmt.QueryRow(email).Scan(&owner.Id, &owner.Name, &owner.NoHp, &owner.Email, &owner.Password, &owner.MembershipId)
+	err = stmt.QueryRow(email).Scan(&owner.Id, &owner.Name, &owner.NoHp, &owner.Email, &owner.Password, &owner.MembershipId, &owner.Role)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("owner with email %s not found", email)
 	} else if err != nil {

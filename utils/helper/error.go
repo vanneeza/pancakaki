@@ -3,6 +3,8 @@ package helper
 import (
 	"net/http"
 	"pancakaki/internal/domain/web"
+	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -50,4 +52,23 @@ func StatusNotFound(err error, context *gin.Context) {
 		context.JSON(http.StatusNotFound, result) //buat ngirim respon
 		return
 	}
+}
+
+func CheckName(name string) bool {
+	// checkName := regexp.MustCompile(`\d`).MatchString(name)
+	nameTrim := strings.ReplaceAll(name, " ", "")
+	checkName := regexp.MustCompile(`^[a-zA-Z]+$`)
+	isMatch := checkName.MatchString(nameTrim)
+
+	return isMatch
+}
+
+func CheckHp(hp string) bool {
+	hpTrim := strings.ReplaceAll(hp, " ", "")
+	checkHp, _ := regexp.Compile(`[0-9]+`)
+	isMatch := checkHp.MatchString(hpTrim)
+	// if isMatch {
+	// 	return true
+	// }
+	return isMatch
 }
