@@ -1,0 +1,1291 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>admin: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">pancakaki/internal/repository/admin/admin_repository_impl.go (89.8%)</option>
+				
+				<option value="file1">pancakaki/internal/repository/bank/bank_repository_impl.go (66.7%)</option>
+				
+				<option value="file2">pancakaki/internal/repository/bank_store/bank_store_repository.go (64.7%)</option>
+				
+				<option value="file3">pancakaki/internal/repository/chart/chart_repository_impl.go (87.2%)</option>
+				
+				<option value="file4">pancakaki/internal/repository/customer/customer_repository_impl.go (60.3%)</option>
+				
+				<option value="file5">pancakaki/internal/repository/membership/membership_repository_impl.go (87.2%)</option>
+				
+				<option value="file6">pancakaki/internal/repository/merk/merk_repository.go (91.5%)</option>
+				
+				<option value="file7">pancakaki/internal/service/admin/admin_service_impl.go (72.3%)</option>
+				
+				<option value="file8">pancakaki/internal/service/bank/bank_service.go (100.0%)</option>
+				
+				<option value="file9">pancakaki/internal/service/merk/merk_service.go (76.7%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package adminrepository
+
+import (
+        "database/sql"
+        "fmt"
+        "pancakaki/internal/domain/entity"
+)
+
+type AdminRepositoryImpl struct {
+        Db *sql.DB
+}
+
+func NewAdminRepository(Db *sql.DB) AdminRepository <span class="cov8" title="1">{
+        return &amp;AdminRepositoryImpl{
+                Db: Db,
+        }
+}</span>
+
+func (r *AdminRepositoryImpl) Create(admin *entity.Admin) (*entity.Admin, error) <span class="cov8" title="1">{
+        stmt, err := r.Db.Prepare("INSERT INTO tbl_admin (username, password) VALUES ($1, $2) RETURNING id")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        err = stmt.QueryRow(admin.Username, admin.Password).Scan(&amp;admin.Id)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return admin, nil</span>
+}
+
+func (r *AdminRepositoryImpl) FindAll() ([]entity.Admin, error) <span class="cov8" title="1">{
+        var admins []entity.Admin
+        rows, err := r.Db.Query("SELECT id, username, password, role FROM tbl_admin WHERE is_deleted = FALSE")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+
+        for rows.Next() </span><span class="cov8" title="1">{
+                var admin entity.Admin
+                err := rows.Scan(&amp;admin.Id, &amp;admin.Username, &amp;admin.Password, &amp;admin.Role)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov8" title="1">admins = append(admins, admin)</span>
+        }
+
+        <span class="cov8" title="1">return admins, nil</span>
+}
+
+func (r *AdminRepositoryImpl) FindById(id int, username string) (*entity.Admin, error) <span class="cov8" title="1">{
+        var admin entity.Admin
+        stmt, err := r.Db.Prepare("SELECT id, username, password, role FROM tbl_admin WHERE is_deleted = 'FALSE' AND id = $1 OR username = $2")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        row := stmt.QueryRow(id, username)
+        err = row.Scan(&amp;admin.Id, &amp;admin.Username, &amp;admin.Password, &amp;admin.Role)
+        if err == sql.ErrNoRows </span><span class="cov0" title="0">{
+                return &amp;admin, fmt.Errorf("admin with id %d not found", id)
+        }</span> else<span class="cov8" title="1"> if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;admin, nil</span>
+}
+
+func (r *AdminRepositoryImpl) Update(admin *entity.Admin) (*entity.Admin, error) <span class="cov8" title="1">{
+        stmt, err := r.Db.Prepare("UPDATE tbl_admin SET username = $1, password = $2 WHERE id = $3")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        _, err = stmt.Exec(admin.Username, admin.Password, admin.Id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return admin, nil</span>
+}
+
+func (r *AdminRepositoryImpl) Delete(adminId int) error <span class="cov8" title="1">{
+        stmt, err := r.Db.Prepare("Update tbl_admin SET is_deleted = TRUE WHERE id = $1")
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        _, err = stmt.Exec(adminId)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package bankrepository
+
+import (
+        "database/sql"
+        "pancakaki/internal/domain/entity"
+)
+
+type BankRepositoryImpl struct {
+        Db *sql.DB
+}
+
+func NewBankRepository(Db *sql.DB) BankRepository <span class="cov8" title="1">{
+        return &amp;BankRepositoryImpl{
+                Db: Db,
+        }
+}</span>
+
+func (r *BankRepositoryImpl) Create(bank *entity.Bank) (*entity.Bank, error) <span class="cov8" title="1">{
+
+        stmt, err := r.Db.Prepare("INSERT INTO tbl_bank (name, bank_account, account_name) VALUES ($1, $2, $3) RETURNING id")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        err = stmt.QueryRow(bank.Name, bank.BankAccount, bank.AccountName).Scan(&amp;bank.Id)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return bank, nil</span>
+}
+
+func (r *BankRepositoryImpl) CreateBankAdmin(bankAdmin *entity.BankAdmin) (*entity.BankAdmin, error) <span class="cov0" title="0">{
+        stmt, err := r.Db.Prepare("INSERT INTO tbl_bank_admin (admin_id, bank_id) VALUES ($1, $2) RETURNING id")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer stmt.Close()
+
+        err = stmt.QueryRow(bankAdmin.AdminId, bankAdmin.BankId).Scan(&amp;bankAdmin.Id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return bankAdmin, nil</span>
+}
+
+func (r *BankRepositoryImpl) FindAll() ([]entity.Bank, error) <span class="cov8" title="1">{
+        var tbl_bank []entity.Bank
+        rows, err := r.Db.Query(`SELECT tbl_bank.id, tbl_bank.name, tbl_bank.bank_account, tbl_bank.account_name
+        FROM tbl_bank INNER JOIN tbl_bank_admin ON tbl_bank.id = tbl_bank_admin.bank_id where tbl_bank.is_deleted = false`)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+
+        for rows.Next() </span><span class="cov8" title="1">{
+                var bank entity.Bank
+                err := rows.Scan(&amp;bank.Id, &amp;bank.Name, &amp;bank.BankAccount, &amp;bank.AccountName)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov8" title="1">tbl_bank = append(tbl_bank, bank)</span>
+        }
+
+        <span class="cov8" title="1">return tbl_bank, nil</span>
+}
+
+func (r *BankRepositoryImpl) Update(bank *entity.Bank) (*entity.Bank, error) <span class="cov8" title="1">{
+        stmt, err := r.Db.Prepare(`UPDATE tbl_bank SET name = $1, bank_account = $2, account_name = $3        WHERE id = $4`)
+
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer stmt.Close()
+
+        _, err = stmt.Exec(bank.Name, bank.BankAccount, bank.AccountName, bank.Id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return bank, nil</span>
+}
+
+func (r *BankRepositoryImpl) Delete(bankId int) error <span class="cov8" title="1">{
+        stmt, err := r.Db.Prepare("UPDATE tbl_bank SET is_deleted = TRUE WHERE id= $1")
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        _, err = stmt.Exec(bankId)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package bankstorerepository
+
+import (
+        "database/sql"
+        "fmt"
+        "pancakaki/internal/domain/entity"
+)
+
+type BankStoreRepository interface {
+        CreateBankStore(newBank *entity.BankStore, tx *sql.Tx) (*entity.BankStore, error)
+        CreateBank(newBank *entity.Bank, tx *sql.Tx) (*entity.Bank, error)
+        UpdateBankStore(updateBank *entity.Bank, tx *sql.Tx) (*entity.Bank, error)
+        DeleteBank(id int, tx *sql.Tx) error
+        DeleteBankStore(storeId int, tx *sql.Tx) error
+        GetBankStoreByStoreId(id int) ([]entity.Bank, error)
+        GetBankAdminById(id int) ([]entity.Bank, error)
+}
+
+type bankStoreRepository struct {
+        db *sql.DB
+}
+
+func (repo *bankStoreRepository) GetBankAdminById(id int) ([]entity.Bank, error) <span class="cov8" title="1">{
+        var banks []entity.Bank
+        rows, err := repo.db.Query(`
+                SELECT tbl_bank.id, tbl_bank.name, tbl_bank.bank_account, tbl_bank.account_name FROM tbl_bank
+                INNER JOIN tbl_bank_admin ON tbl_bank.id = tbl_bank_admin.bank_id WHERE tbl_bank_admin.admin_id = $1`, id)
+        if err == sql.ErrNoRows </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("bank with admin id %d not found", id)
+        }</span> else<span class="cov8" title="1"> if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+        for rows.Next() </span><span class="cov8" title="1">{
+                var bank entity.Bank
+                err := rows.Scan(&amp;bank.Id, &amp;bank.Name, &amp;bank.BankAccount, &amp;bank.AccountName)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to get bank admin : %w", err)
+                }</span>
+                <span class="cov8" title="1">banks = append(banks, bank)</span>
+        }
+
+        <span class="cov8" title="1">return banks, nil</span>
+}
+
+func (repo *bankStoreRepository) GetBankStoreByStoreId(id int) ([]entity.Bank, error) <span class="cov0" title="0">{
+        var banks []entity.Bank
+        rows, err := repo.db.Query(`
+                SELECT tbl_bank.id, tbl_bank.name, tbl_bank.bank_account, tbl_bank.account_name FROM tbl_bank
+                INNER JOIN tbl_bank_store ON tbl_bank.id = tbl_bank_store.bank_id WHERE tbl_bank_store.store_id = $1`, id)
+        if err == sql.ErrNoRows </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("bank with store id %d not found", id)
+        }</span> else<span class="cov0" title="0"> if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+        for rows.Next() </span><span class="cov0" title="0">{
+                var bank entity.Bank
+                err := rows.Scan(&amp;bank.Id, &amp;bank.Name, &amp;bank.BankAccount, &amp;bank.AccountName)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to get bank store: %w", err)
+                }</span>
+                <span class="cov0" title="0">banks = append(banks, bank)</span>
+        }
+
+        <span class="cov0" title="0">return banks, nil</span>
+}
+
+func (repo *bankStoreRepository) CreateBank(newBank *entity.Bank, tx *sql.Tx) (*entity.Bank, error) <span class="cov8" title="1">{
+        stmt, err := repo.db.Prepare("INSERT INTO tbl_bank (name,bank_account,account_name) VALUES ($1,$2,$3) RETURNING id")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("failed to create bank store: %w", err)
+        }</span>
+        <span class="cov0" title="0">defer stmt.Close()
+
+        err = stmt.QueryRow(newBank.Name, newBank.BankAccount, newBank.AccountName).Scan(&amp;newBank.Id)
+        bankValidate(err, "create bank store", tx)
+        return newBank, nil</span>
+}
+
+func (repo *bankStoreRepository) CreateBankStore(newBankStore *entity.BankStore, tx *sql.Tx) (*entity.BankStore, error) <span class="cov8" title="1">{
+        stmt, err := repo.db.Prepare("INSERT INTO tbl_bank_store (store_id,bank_id) VALUES ($1,$2) RETURNING id")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("failed to create bank store: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        err = stmt.QueryRow(newBankStore.StoreId, newBankStore.BankId).Scan(&amp;newBankStore.Id)
+        bankValidate(err, "create bank store", tx)
+        return newBankStore, nil</span>
+}
+
+func (repo *bankStoreRepository) UpdateBankStore(updateBank *entity.Bank, tx *sql.Tx) (*entity.Bank, error) <span class="cov8" title="1">{
+        stmt, err := repo.db.Prepare("UPDATE tbl_bank SET name = $1, bank_account=$2, account_name=$3 WHERE id = $4")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("failed to update bank store: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        _, err = stmt.Exec(updateBank.Name, updateBank.BankAccount, updateBank.AccountName, updateBank.Id)
+        bankValidate(err, "update bank store", tx)
+
+        return updateBank, nil</span>
+}
+
+func (repo *bankStoreRepository) DeleteBank(id int, tx *sql.Tx) error <span class="cov8" title="1">{
+        stmt, err := repo.db.Prepare("UPDATE tbl_bank SET is_deleted = true WHERE id = $1")
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("failed to delete bank store: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        _, err = stmt.Exec(id)
+        bankValidate(err, "delete bank store", tx)
+
+        return nil</span>
+}
+
+func (repo *bankStoreRepository) DeleteBankStore(storeId int, tx *sql.Tx) error <span class="cov8" title="1">{
+        stmt, err := repo.db.Prepare("UPDATE tbl_bank_store SET is_deleted = true WHERE store_id = $1")
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to delete bank store: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        _, err = stmt.Exec(storeId)
+        bankValidate(err, "delete bank store", tx)
+
+        return nil</span>
+}
+
+func bankValidate(err error, message string, tx *sql.Tx) <span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
+                tx.Rollback()
+                fmt.Println(err, "transaction rollback")
+        }</span> else<span class="cov8" title="1"> {
+                fmt.Println("success")
+        }</span>
+}
+
+func NewBankStoreRepository(db *sql.DB) BankStoreRepository <span class="cov8" title="1">{
+        return &amp;bankStoreRepository{db: db}
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package chartrepository
+
+import (
+        "database/sql"
+        "pancakaki/internal/domain/entity"
+)
+
+type ChartRepositoryImpl struct {
+        Db *sql.DB
+}
+
+func NewChartRepository(Db *sql.DB) ChartRepository <span class="cov8" title="1">{
+        return &amp;ChartRepositoryImpl{
+                Db: Db,
+        }
+}</span>
+
+func (r *ChartRepositoryImpl) Create(chart *entity.Chart) (*entity.Chart, error) <span class="cov8" title="1">{
+        stmt, err := r.Db.Prepare("INSERT INTO tbl_chart (quantity, total, customer_id, product_id) VALUES ($1, $2, $3, $4) RETURNING id")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">defer stmt.Close()
+        err = stmt.QueryRow(chart.Qty, chart.Total, chart.CustomerId, chart.ProductId).Scan(&amp;chart.Id)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return chart, nil</span>
+}
+
+func (r *ChartRepositoryImpl) FindAll(customerId int) ([]entity.Chart, error) <span class="cov8" title="1">{
+        var tbl_chart []entity.Chart
+        rows, err := r.Db.Query(`SELECT id, quantity, total, customer_id, product_id FROM tbl_chart WHERE is_deleted = 'FALSE' AND customer_id = $1`, customerId)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+
+        for rows.Next() </span><span class="cov8" title="1">{
+                var chart entity.Chart
+                err := rows.Scan(&amp;chart.Id, &amp;chart.Qty, &amp;chart.Total, &amp;chart.CustomerId, &amp;chart.ProductId)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov8" title="1">tbl_chart = append(tbl_chart, chart)</span>
+        }
+
+        <span class="cov8" title="1">return tbl_chart, nil</span>
+}
+
+func (r *ChartRepositoryImpl) FindById(id int) (*entity.Chart, error) <span class="cov8" title="1">{
+        var chart entity.Chart
+        stmt, err := r.Db.Prepare("SELECT id, quantity, total, customer_id, product_id FROM tbl_chart WHERE id = $1 AND is_deleted = 'FALSE'")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        row := stmt.QueryRow(id)
+        err = row.Scan(&amp;chart.Id, &amp;chart.Qty, &amp;chart.Total, &amp;chart.CustomerId, &amp;chart.ProductId)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;chart, nil</span>
+}
+
+func (r *ChartRepositoryImpl) Update(chart *entity.Chart) (*entity.Chart, error) <span class="cov8" title="1">{
+        stmt, err := r.Db.Prepare(`UPDATE tbl_chart        SET quantity = $1, total = $2 WHERE id = $3`)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        _, err = stmt.Exec(chart.Qty, chart.Total, chart.Id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return chart, nil</span>
+}
+
+func (r *ChartRepositoryImpl) Delete(chartId int) error <span class="cov8" title="1">{
+        stmt, err := r.Db.Prepare("UPDATE tbl_chart SET is_deleted = TRUE WHERE id= $1")
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        _, err = stmt.Exec(chartId)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package customerrepository
+
+import (
+        "database/sql"
+        "fmt"
+        "pancakaki/internal/domain/entity"
+)
+
+type CustomerRepositoryImpl struct {
+        Db *sql.DB
+}
+
+func NewCustomerRepository(Db *sql.DB) CustomerRepository <span class="cov8" title="1">{
+        return &amp;CustomerRepositoryImpl{
+                Db: Db,
+        }
+}</span>
+
+func (r *CustomerRepositoryImpl) Create(customer *entity.Customer) (*entity.Customer, error) <span class="cov8" title="1">{
+        stmt, err := r.Db.Prepare("INSERT INTO tbl_customer (name, no_hp, address, password) VALUES ($1, $2, $3, $4) RETURNING id")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        err = stmt.QueryRow(customer.Name, customer.NoHp, customer.Address, customer.Password).Scan(&amp;customer.Id)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return customer, nil</span>
+}
+
+func (r *CustomerRepositoryImpl) FindAll() ([]entity.Customer, error) <span class="cov8" title="1">{
+        var customers []entity.Customer
+        rows, err := r.Db.Query("SELECT id, name, no_hp, address, password FROM tbl_customer WHERE is_deleted = 'FALSE'")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+
+        for rows.Next() </span><span class="cov8" title="1">{
+                var customer entity.Customer
+                err := rows.Scan(&amp;customer.Id, &amp;customer.Name, &amp;customer.NoHp, &amp;customer.Address, &amp;customer.Password)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov8" title="1">customers = append(customers, customer)</span>
+        }
+
+        <span class="cov8" title="1">return customers, nil</span>
+}
+
+func (r *CustomerRepositoryImpl) FindByIdOrNameOrHp(customerId int, customerName, customerNoHP string) (*entity.Customer, error) <span class="cov8" title="1">{
+        var customer entity.Customer
+        stmt, err := r.Db.Prepare("SELECT id, name, no_hp, address, password, role FROM tbl_customer WHERE is_deleted = 'false' AND id = $1 OR name = $2 OR no_hp = $3")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("error prepare")
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+        row := stmt.QueryRow(customerId, customerName, customerNoHP)
+        err = row.Scan(&amp;customer.Id, &amp;customer.Name, &amp;customer.NoHp, &amp;customer.Address, &amp;customer.Password, &amp;customer.Role)
+        if err == sql.ErrNoRows </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("customer not found with customerId %d, customerName %s, customerNoHp %s", customerId, customerName, customerNoHP)
+        }</span> else<span class="cov8" title="1"> if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return &amp;customer, nil</span>
+}
+
+func (r *CustomerRepositoryImpl) Update(customer *entity.Customer) (*entity.Customer, error) <span class="cov8" title="1">{
+        stmt, err := r.Db.Prepare("UPDATE tbl_customer SET name = $1, no_hp = $2,  address = $3,  password = $4 WHERE id = $5")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        _, err = stmt.Exec(customer.Name, customer.NoHp, customer.Address, customer.Password, customer.Id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return customer, nil</span>
+}
+
+func (r *CustomerRepositoryImpl) Delete(customerId int) error <span class="cov8" title="1">{
+        stmt, err := r.Db.Prepare("UPDATE tbl_customer SET is_deleted = TRUE WHERE id = $1")
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov0" title="0">defer stmt.Close()
+
+        _, err = stmt.Exec(customerId)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+func (r *CustomerRepositoryImpl) FindTransactionCustomerById(customerId, virtualAccount int) ([]entity.TransactionCustomer, error) <span class="cov0" title="0">{
+
+        var customers []entity.TransactionCustomer
+        rows, err := r.Db.Query(`SELECT tbl_customer.name, tbl_merk.name, tbl_product.id, tbl_product.name, tbl_product.price, tbl_product.shipping_cost,
+        tbl_transaction_order.quantity, tbl_transaction_detail_order.tax, tbl_transaction_detail_order.total_price,
+        tbl_transaction_detail_order.buy_date, tbl_transaction_detail_order.status,tbl_store.name, tbl_transaction_detail_order.virtual_account
+        FROM tbl_transaction_detail_order
+        INNER JOIN tbl_transaction_order ON tbl_transaction_detail_order.id = tbl_transaction_order.detail_order_id
+        INNER JOIN tbl_customer ON tbl_transaction_order.customer_id = tbl_customer.id
+        INNER JOIN tbl_product ON tbl_transaction_order.product_id = tbl_product.id
+        INNER JOIN tbl_store ON tbl_product.store_id = tbl_store.id
+        INNER JOIN tbl_merk ON tbl_product.merk_id = tbl_merk.id
+        WHERE tbl_customer.id = $1 OR tbl_transaction_detail_order.virtual_account = $2
+        ORDER BY tbl_transaction_detail_order.status, tbl_transaction_detail_order.virtual_account ASC;`, customerId, virtualAccount)
+        // helper.PanicErr(err)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">defer rows.Close()
+
+        for rows.Next() </span><span class="cov0" title="0">{
+                var customer entity.TransactionCustomer
+                err := rows.Scan(&amp;customer.CustomerName,
+                        &amp;customer.MerkName,
+                        &amp;customer.ProductId,
+                        &amp;customer.ProductName,
+                        &amp;customer.ProductPrice,
+                        &amp;customer.ShippingCost,
+                        &amp;customer.Qty,
+                        &amp;customer.Tax,
+                        &amp;customer.TotalPrice,
+                        &amp;customer.BuyDate,
+                        &amp;customer.Status,
+                        &amp;customer.StoreName,
+                        &amp;customer.VirtualAccount)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">customers = append(customers, customer)</span>
+        }
+
+        <span class="cov0" title="0">if err = rows.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return customers, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package membershiprepository
+
+import (
+        "database/sql"
+        "pancakaki/internal/domain/entity"
+)
+
+type MembershipRepositoryImpl struct {
+        Db *sql.DB
+}
+
+func NewMembershipRepository(Db *sql.DB) MembershipRepository <span class="cov8" title="1">{
+        return &amp;MembershipRepositoryImpl{
+                Db: Db,
+        }
+}</span>
+
+func (r *MembershipRepositoryImpl) Create(membership *entity.Membership) (*entity.Membership, error) <span class="cov8" title="1">{
+
+        stmt, err := r.Db.Prepare("INSERT INTO tbl_membership (name, tax, price) VALUES ($1, $2, $3) RETURNING id")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        err = stmt.QueryRow(membership.Name, membership.Tax, membership.Price).Scan(&amp;membership.Id)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return membership, nil</span>
+}
+
+func (r *MembershipRepositoryImpl) FindAll() ([]entity.Membership, error) <span class="cov8" title="1">{
+        var tbl_membership []entity.Membership
+        rows, err := r.Db.Query(`SELECT id, name, tax, price FROM tbl_membership WHERE is_deleted = 'FALSE'`)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+
+        for rows.Next() </span><span class="cov8" title="1">{
+                var membership entity.Membership
+                err := rows.Scan(&amp;membership.Id, &amp;membership.Name, &amp;membership.Tax, &amp;membership.Price)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov8" title="1">tbl_membership = append(tbl_membership, membership)</span>
+        }
+
+        <span class="cov8" title="1">return tbl_membership, nil</span>
+}
+
+func (r *MembershipRepositoryImpl) FindById(id int) (*entity.Membership, error) <span class="cov8" title="1">{
+        var membership entity.Membership
+        stmt, err := r.Db.Prepare("SELECT id, name, tax, price FROM tbl_membership WHERE id = $1 and is_deleted = 'FALSE'")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        row := stmt.QueryRow(id)
+        err = row.Scan(&amp;membership.Id, &amp;membership.Name, &amp;membership.Tax, &amp;membership.Price)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;membership, nil</span>
+}
+
+func (r *MembershipRepositoryImpl) Update(membership *entity.Membership) (*entity.Membership, error) <span class="cov8" title="1">{
+        stmt, err := r.Db.Prepare("UPDATE tbl_membership SET name = $1, tax = $2, price = $3 WHERE id = $4")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        _, err = stmt.Exec(membership.Name, membership.Tax, membership.Price, membership.Id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return membership, nil</span>
+}
+
+func (r *MembershipRepositoryImpl) Delete(membershipId int) error <span class="cov8" title="1">{
+        stmt, err := r.Db.Prepare("UPDATE tbl_membership SET is_deleted = TRUE WHERE id= $1")
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        _, err = stmt.Exec(membershipId)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package merkrepository
+
+import (
+        "database/sql"
+        "fmt"
+        "pancakaki/internal/domain/entity"
+)
+
+type MerkRepository interface {
+        InsertMerk(newMerk *entity.Merk) (*entity.Merk, error)
+        UpdateMerk(updateMerk *entity.Merk) (*entity.Merk, error)
+        DeleteMerk(deleteMerk *entity.Merk) error
+        FindMerkById(id int) (*entity.Merk, error)
+        FindMerkByName(name string) (*entity.Merk, error)
+        FindAllMerk() ([]entity.Merk, error)
+}
+
+type merkRepository struct {
+        db *sql.DB
+}
+
+// DeleteMerk implements MerkRepository
+func (repo *merkRepository) DeleteMerk(deleteMerk *entity.Merk) error <span class="cov8" title="1">{
+        stmt, err := repo.db.Prepare("UPDATE tbl_merk SET is_deleted = true WHERE id = $1")
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("failed to delete merk : %w", err)
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        _, err = stmt.Exec(deleteMerk.Id)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to delete merk : %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// FindAllMerk implements MerkRepository
+func (repo *merkRepository) FindAllMerk() ([]entity.Merk, error) <span class="cov8" title="1">{
+        var merks []entity.Merk
+        rows, err := repo.db.Query("SELECT id, name FROM tbl_merk where is_deleted = FALSE")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("failed to get merk : %w", err)
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+
+        for rows.Next() </span><span class="cov8" title="1">{
+                var merk entity.Merk
+                err := rows.Scan(&amp;merk.Id, &amp;merk.Name)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to get merk : %w", err)
+                }</span>
+                <span class="cov8" title="1">merks = append(merks, merk)</span>
+        }
+
+        <span class="cov8" title="1">return merks, nil</span>
+}
+
+// FindMerkById implements MerkRepository
+func (repo *merkRepository) FindMerkById(id int) (*entity.Merk, error) <span class="cov8" title="1">{
+        var merk entity.Merk
+        stmt, err := repo.db.Prepare("SELECT id, name FROM tbl_merk WHERE id = $1 AND is_deleted = 'false'")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        err = stmt.QueryRow(id).Scan(&amp;merk.Id, &amp;merk.Name)
+        if err == sql.ErrNoRows </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("merk with id %d not found", id)
+        }</span> else<span class="cov8" title="1"> if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;merk, nil</span>
+}
+
+// FindMerkByName implements MerkRepository
+func (repo *merkRepository) FindMerkByName(name string) (*entity.Merk, error) <span class="cov8" title="1">{
+        var merk entity.Merk
+        stmt, err := repo.db.Prepare("SELECT id, name FROM tbl_merk WHERE name = $1")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        err = stmt.QueryRow(name).Scan(&amp;merk.Id, &amp;merk.Name)
+        if err == sql.ErrNoRows </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("merk with name %s not found", name)
+        }</span> else<span class="cov8" title="1"> if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;merk, nil</span>
+}
+
+// InsertMerk implements MerkRepository
+func (repo *merkRepository) InsertMerk(newMerk *entity.Merk) (*entity.Merk, error) <span class="cov8" title="1">{
+
+        stmt, err := repo.db.Prepare("INSERT INTO tbl_merk (name) VALUES ($1) RETURNING id")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("failed to insert merk : %w", err)
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        err = stmt.QueryRow(newMerk.Name).Scan(&amp;newMerk.Id)
+
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("failed to insert merk : %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return newMerk, nil</span>
+}
+
+// UpdateMerk implements MerkRepository
+func (repo *merkRepository) UpdateMerk(updateMerk *entity.Merk) (*entity.Merk, error) <span class="cov8" title="1">{
+        stmt, err := repo.db.Prepare("UPDATE tbl_merk SET name = $1 WHERE id = $2")
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("failed to update merk : %w", err)
+        }</span>
+        <span class="cov8" title="1">defer stmt.Close()
+
+        _, err = stmt.Exec(updateMerk.Name, updateMerk.Id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to update merk : %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return updateMerk, nil</span>
+}
+
+func NewMerkRepository(db *sql.DB) MerkRepository <span class="cov8" title="1">{
+        return &amp;merkRepository{db: db}
+}</span>
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package adminservice
+
+import (
+        "errors"
+        "pancakaki/internal/domain/entity"
+        webadmin "pancakaki/internal/domain/web/admin"
+        webbank "pancakaki/internal/domain/web/bank"
+        adminrepository "pancakaki/internal/repository/admin"
+        bankrepository "pancakaki/internal/repository/bank"
+        customerrepository "pancakaki/internal/repository/customer"
+        ownerrepository "pancakaki/internal/repository/owner"
+        "pancakaki/utils/helper"
+
+        "golang.org/x/crypto/bcrypt"
+)
+
+type AdminServiceImpl struct {
+        AdminRepository    adminrepository.AdminRepository
+        BankRepository     bankrepository.BankRepository
+        OwnerRepository    ownerrepository.OwnerRepository
+        CustomerRepository customerrepository.CustomerRepository
+}
+
+func NewAdminService(adminRepository adminrepository.AdminRepository,
+        bankRepository bankrepository.BankRepository,
+        ownerRepository ownerrepository.OwnerRepository,
+        customerRepository customerrepository.CustomerRepository) AdminService <span class="cov8" title="1">{
+        return &amp;AdminServiceImpl{
+                AdminRepository:    adminRepository,
+                BankRepository:     bankRepository,
+                OwnerRepository:    ownerRepository,
+                CustomerRepository: customerRepository,
+        }
+}</span>
+
+func (adminService *AdminServiceImpl) Register(req webadmin.AdminCreateRequest) (webadmin.AdminResponse, error) <span class="cov8" title="1">{
+
+        encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+        admin := entity.Admin{
+                Username: req.Username,
+                Password: string(encryptedPassword),
+        }
+
+        adminData, _ := adminService.AdminRepository.Create(&amp;admin)
+        adminResponse := webadmin.AdminResponse{
+                Id:       adminData.Id,
+                Username: adminData.Username,
+                Password: adminData.Password,
+                Role:     "admin",
+        }
+        return adminResponse, nil
+}</span>
+
+func (adminService *AdminServiceImpl) ViewAll() ([]webadmin.AdminResponse, error) <span class="cov8" title="1">{
+
+        adminData, err := adminService.AdminRepository.FindAll()
+        helper.PanicErr(err)
+
+        adminResponse := make([]webadmin.AdminResponse, len(adminData))
+        for i, admin := range adminData </span><span class="cov8" title="1">{
+                adminResponse[i] = webadmin.AdminResponse{
+                        Id:       admin.Id,
+                        Username: admin.Username,
+                        Password: admin.Password,
+                        Role:     admin.Role,
+                        Token:    "NULL",
+                }
+        }</span>
+        <span class="cov8" title="1">return adminResponse, nil</span>
+}
+
+func (adminService *AdminServiceImpl) ViewOne(adminId int, username string) (webadmin.AdminResponse, error) <span class="cov8" title="1">{
+        admin, err := adminService.AdminRepository.FindById(adminId, username)
+        if err != nil </span><span class="cov0" title="0">{
+                return webadmin.AdminResponse{}, errors.New("NULL")
+        }</span>
+
+        <span class="cov8" title="1">adminResponse := webadmin.AdminResponse{
+                Id:       admin.Id,
+                Username: admin.Username,
+                Password: admin.Password,
+                Role:     admin.Role,
+                Token:    "NULL",
+        }
+
+        return adminResponse, nil</span>
+}
+
+func (adminService *AdminServiceImpl) Edit(req webadmin.AdminUpdateRequest) (webadmin.AdminResponse, error) <span class="cov8" title="1">{
+        encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+        admin := entity.Admin{
+                Id:       req.Id,
+                Username: req.Username,
+                Password: string(encryptedPassword),
+        }
+
+        adminData, err := adminService.AdminRepository.Update(&amp;admin)
+        helper.PanicErr(err)
+
+        adminResponse := webadmin.AdminResponse{
+                Id:       adminData.Id,
+                Username: adminData.Username,
+                Password: adminData.Password,
+                Role:     "admin",
+                Token:    "NULL",
+        }
+
+        return adminResponse, nil
+}</span>
+
+func (adminService *AdminServiceImpl) Unreg(adminId int, username string) (webadmin.AdminResponse, error) <span class="cov8" title="1">{
+
+        adminData, err := adminService.AdminRepository.FindById(adminId, username)
+        if err != nil </span><span class="cov0" title="0">{
+                return webadmin.AdminResponse{}, errors.New("NULL")
+        }</span>
+
+        <span class="cov8" title="1">err = adminService.AdminRepository.Delete(adminId)
+        if err != nil </span><span class="cov0" title="0">{
+                return webadmin.AdminResponse{}, errors.New("NULL")
+        }</span>
+
+        <span class="cov8" title="1">adminResponse := webadmin.AdminResponse{
+                Id:       adminData.Id,
+                Username: adminData.Username,
+                Password: adminData.Password,
+                Role:     adminData.Role,
+                Token:    "NULL",
+        }
+
+        return adminResponse, nil</span>
+}
+
+func (adminService *AdminServiceImpl) RegisterBank(req webbank.BankCreateRequest, reqBank webbank.BankAdminCreateRequest) (webbank.BankResponse, error) <span class="cov0" title="0">{
+
+        bank := entity.Bank{
+                Name:        req.Name,
+                BankAccount: req.BankAccount,
+                AccountName: req.AccountName,
+        }
+
+        bankData, _ := adminService.BankRepository.Create(&amp;bank)
+
+        bankAdmin := entity.BankAdmin{
+                AdminId: reqBank.AdminId,
+                BankId:  bankData.Id,
+        }
+
+        adminService.BankRepository.CreateBankAdmin(&amp;bankAdmin)
+        bankResponse := webbank.BankResponse{
+                Id:          bankData.Id,
+                Name:        bankData.Name,
+                AccountName: bankData.AccountName,
+                BankAccount: bankData.BankAccount,
+        }
+        return bankResponse, nil
+}</span>
+
+func (adminService *AdminServiceImpl) EditBank(req webbank.BankUpdateRequest) (webbank.BankResponse, error) <span class="cov0" title="0">{
+
+        bank := entity.Bank{
+                Id:          req.Id,
+                Name:        req.Name,
+                BankAccount: req.BankAccount,
+                AccountName: req.AccountName,
+        }
+
+        bankData, _ := adminService.BankRepository.Update(&amp;bank)
+
+        bankResponse := webbank.BankResponse{
+                Id:          bankData.Id,
+                Name:        bankData.Name,
+                AccountName: bankData.AccountName,
+                BankAccount: bankData.BankAccount,
+        }
+        return bankResponse, nil
+}</span>
+func (adminService *AdminServiceImpl) ViewAllBank() ([]webbank.BankResponse, error) <span class="cov8" title="1">{
+
+        bankData, err := adminService.BankRepository.FindAll()
+        helper.PanicErr(err)
+
+        bankResponse := make([]webbank.BankResponse, len(bankData))
+        for i, bank := range bankData </span><span class="cov8" title="1">{
+                bankResponse[i] = webbank.BankResponse{
+                        Id:          bank.Id,
+                        Name:        bank.Name,
+                        AccountName: bank.AccountName,
+                        BankAccount: bank.BankAccount,
+                }
+        }</span>
+        <span class="cov8" title="1">return bankResponse, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package bankservice
+
+import (
+        "pancakaki/internal/domain/entity"
+        bankstorerepository "pancakaki/internal/repository/bank_store"
+)
+
+type BankService interface {
+        GetBankAdminById(id int) ([]entity.Bank, error)
+}
+
+type bankService struct {
+        bankstorerepository bankstorerepository.BankStoreRepository
+}
+
+func (s *bankService) GetBankAdminById(id int) ([]entity.Bank, error) <span class="cov8" title="1">{
+        return s.bankstorerepository.GetBankAdminById(id)
+}</span>
+
+func NewBankService(bankstorerepository bankstorerepository.BankStoreRepository) BankService <span class="cov8" title="1">{
+        return &amp;bankService{bankstorerepository: bankstorerepository}
+}</span>
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package merkservice
+
+import (
+        "errors"
+        "pancakaki/internal/domain/entity"
+        webmerk "pancakaki/internal/domain/web/merk"
+        merkrepository "pancakaki/internal/repository/merk"
+        "pancakaki/utils/helper"
+)
+
+type MerkService interface {
+        Register(req webmerk.MerkCreateRequest) (webmerk.MerkResponse, error)
+        ViewAll() ([]webmerk.MerkResponse, error)
+        ViewOne(memberwebmerkId int) (webmerk.MerkResponse, error)
+        Edit(req webmerk.MerkUpdateRequest) (webmerk.MerkResponse, error)
+        Unreg(memberwebmerkId int) (webmerk.MerkResponse, error)
+}
+
+// type merkService struct {
+//         merkRepo merkrepository.MerkRepository
+// }
+
+// DeleteMerk implements MerkService
+type MerkServiceImpl struct {
+        MerkRepository merkrepository.MerkRepository
+}
+
+func NewMerkService(merkRepository merkrepository.MerkRepository) MerkService <span class="cov8" title="1">{
+        return &amp;MerkServiceImpl{
+                MerkRepository: merkRepository,
+        }
+}</span>
+
+func (merkService *MerkServiceImpl) Register(req webmerk.MerkCreateRequest) (webmerk.MerkResponse, error) <span class="cov8" title="1">{
+
+        merk := entity.Merk{
+                Name: req.Name,
+        }
+        merkData, _ := merkService.MerkRepository.InsertMerk(&amp;merk)
+
+        merkResponse := webmerk.MerkResponse{
+                Id:   merkData.Id,
+                Name: merkData.Name,
+        }
+        return merkResponse, nil
+}</span>
+
+func (merkService *MerkServiceImpl) ViewAll() ([]webmerk.MerkResponse, error) <span class="cov8" title="1">{
+
+        merkData, err := merkService.MerkRepository.FindAllMerk()
+        helper.PanicErr(err)
+
+        merkResponse := make([]webmerk.MerkResponse, len(merkData))
+        for i, merk := range merkData </span><span class="cov8" title="1">{
+                merkResponse[i] = webmerk.MerkResponse{
+                        Id:   merk.Id,
+                        Name: merk.Name,
+                }
+        }</span>
+
+        <span class="cov8" title="1">return merkResponse, nil</span>
+}
+
+func (merkService *MerkServiceImpl) ViewOne(merkId int) (webmerk.MerkResponse, error) <span class="cov8" title="1">{
+        merk, err := merkService.MerkRepository.FindMerkById(merkId)
+        if err != nil </span><span class="cov0" title="0">{
+                return webmerk.MerkResponse{}, errors.New("NULL")
+        }</span>
+
+        <span class="cov8" title="1">merkResponse := webmerk.MerkResponse{
+                Id:   merk.Id,
+                Name: merk.Name,
+        }
+
+        return merkResponse, nil</span>
+}
+
+func (merkService *MerkServiceImpl) Edit(req webmerk.MerkUpdateRequest) (webmerk.MerkResponse, error) <span class="cov8" title="1">{
+
+        merk := entity.Merk{
+                Id:   req.Id,
+                Name: req.Name,
+        }
+
+        merkData, err := merkService.MerkRepository.UpdateMerk(&amp;merk)
+        helper.PanicErr(err)
+
+        merkResponse := webmerk.MerkResponse{
+                Id:   merkData.Id,
+                Name: merkData.Name,
+        }
+
+        return merkResponse, nil
+}</span>
+
+func (merkService *MerkServiceImpl) Unreg(merkId int) (webmerk.MerkResponse, error) <span class="cov8" title="1">{
+        merk := entity.Merk{
+                Id: merkId,
+        }
+        merkData, err := merkService.MerkRepository.FindMerkById(merk.Id)
+        if err != nil </span><span class="cov0" title="0">{
+                return webmerk.MerkResponse{}, errors.New("NULL")
+        }</span>
+
+        <span class="cov0" title="0">err = merkService.MerkRepository.DeleteMerk(&amp;merk)
+        if err != nil </span><span class="cov0" title="0">{
+                return webmerk.MerkResponse{}, errors.New("NULL")
+        }</span>
+
+        <span class="cov0" title="0">merkResponse := webmerk.MerkResponse{
+                Id:   merkData.Id,
+                Name: merkData.Name,
+        }
+
+        return merkResponse, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

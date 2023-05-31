@@ -2,6 +2,7 @@ package membershiprepository
 
 import (
 	"database/sql"
+	"fmt"
 	"pancakaki/internal/domain/entity"
 )
 
@@ -42,7 +43,9 @@ func (r *MembershipRepositoryImpl) FindAll() ([]entity.Membership, error) {
 	for rows.Next() {
 		var membership entity.Membership
 		err := rows.Scan(&membership.Id, &membership.Name, &membership.Tax, &membership.Price)
-		if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("membership data not found")
+		} else if err != nil {
 			return nil, err
 		}
 		tbl_membership = append(tbl_membership, membership)
@@ -61,7 +64,9 @@ func (r *MembershipRepositoryImpl) FindById(id int) (*entity.Membership, error) 
 
 	row := stmt.QueryRow(id)
 	err = row.Scan(&membership.Id, &membership.Name, &membership.Tax, &membership.Price)
-	if err != nil {
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("membership with id %d not found", id)
+	} else if err != nil {
 		return nil, err
 	}
 

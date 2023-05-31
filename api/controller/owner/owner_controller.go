@@ -139,12 +139,12 @@ func (h *ownerHandler) GetOwnerById(ctx *gin.Context) {
 	// helper.InternalServerError(err, ctx)
 	if err != nil {
 		result := web.WebResponse{
-			Code:    http.StatusInternalServerError,
-			Status:  "INTERNAL_SERVER_ERROR",
-			Message: "status internal server error",
-			Data:    err.Error(),
+			Code:    http.StatusNotFound,
+			Status:  "STATUS_NOT_FOUND",
+			Message: err.Error(),
+			Data:    "NULL",
 		}
-		ctx.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+		ctx.JSON(http.StatusInternalServerError, result)
 		return
 	}
 	getMembershipById, err := h.membershipService.ViewOne(ownerById.MembershipId)

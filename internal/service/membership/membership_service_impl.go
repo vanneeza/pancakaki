@@ -1,13 +1,11 @@
 package membershipservice
 
 import (
-	"fmt"
-	"log"
+	"errors"
 	"pancakaki/internal/domain/entity"
 	webmembership "pancakaki/internal/domain/web/membership"
 
 	membershiprepository "pancakaki/internal/repository/membership"
-	"pancakaki/utils/helper"
 )
 
 type MembershipServiceImpl struct {
@@ -22,13 +20,28 @@ func NewMembershipService(membershipRepository membershiprepository.MembershipRe
 
 func (membershipService *MembershipServiceImpl) Register(req webmembership.MembershipCreateRequest) (webmembership.MembershipResponse, error) {
 
+	if req.Name == "" {
+		return webmembership.MembershipResponse{}, errors.New("name required")
+	}
+
+	if req.Price == 0 {
+		return webmembership.MembershipResponse{}, errors.New("price required")
+	}
+
+	if req.Tax == 0 {
+		return webmembership.MembershipResponse{}, errors.New("tax required")
+	}
+
 	membership := entity.Membership{
 		Name:  req.Name,
 		Tax:   req.Tax,
 		Price: req.Price,
 	}
 
-	membershipData, _ := membershipService.MembershipRepository.Create(&membership)
+	membershipData, err := membershipService.MembershipRepository.Create(&membership)
+	if err != nil {
+		return webmembership.MembershipResponse{}, errors.New("failed to create membership")
+	}
 
 	membershipResponse := webmembership.MembershipResponse{
 		Id:    membershipData.Id,
@@ -42,7 +55,9 @@ func (membershipService *MembershipServiceImpl) Register(req webmembership.Membe
 func (membershipService *MembershipServiceImpl) ViewAll() ([]webmembership.MembershipResponse, error) {
 
 	membershipData, err := membershipService.MembershipRepository.FindAll()
-	helper.PanicErr(err)
+	if err != nil {
+		return []webmembership.MembershipResponse{}, errors.New("membership data not found")
+	}
 
 	membershipResponse := make([]webmembership.MembershipResponse, len(membershipData))
 	for i, membership := range membershipData {
@@ -59,7 +74,9 @@ func (membershipService *MembershipServiceImpl) ViewAll() ([]webmembership.Membe
 func (membershipService *MembershipServiceImpl) ViewOne(membershipId int) (webmembership.MembershipResponse, error) {
 
 	membership, err := membershipService.MembershipRepository.FindById(membershipId)
-	helper.PanicErr(err)
+	if err != nil {
+		return webmembership.MembershipResponse{}, errors.New("membership data not found")
+	}
 
 	membershipResponse := webmembership.MembershipResponse{
 		Id:    membership.Id,
@@ -73,6 +90,17 @@ func (membershipService *MembershipServiceImpl) ViewOne(membershipId int) (webme
 
 func (membershipService *MembershipServiceImpl) Edit(req webmembership.MembershipUpdateRequest) (webmembership.MembershipResponse, error) {
 
+	if req.Name == "" {
+		return webmembership.MembershipResponse{}, errors.New("name required")
+	}
+
+	if req.Price == 0 {
+		return webmembership.MembershipResponse{}, errors.New("price required")
+	}
+
+	if req.Tax == 0 {
+		return webmembership.MembershipResponse{}, errors.New("tax required")
+	}
 	membership := entity.Membership{
 		Id:    req.Id,
 		Name:  req.Name,
@@ -80,10 +108,11 @@ func (membershipService *MembershipServiceImpl) Edit(req webmembership.Membershi
 		Price: req.Price,
 	}
 
-	log.Println(membership, "service")
-	fmt.Scanln()
 	membershipData, err := membershipService.MembershipRepository.Update(&membership)
-	helper.PanicErr(err)
+
+	if err != nil {
+		return webmembership.MembershipResponse{}, errors.New("update data membership failed")
+	}
 
 	membershipResponse := webmembership.MembershipResponse{
 		Id:    membershipData.Id,
@@ -98,10 +127,14 @@ func (membershipService *MembershipServiceImpl) Edit(req webmembership.Membershi
 func (membershipService *MembershipServiceImpl) Unreg(membershipId int) (webmembership.MembershipResponse, error) {
 
 	membershipData, err := membershipService.MembershipRepository.FindById(membershipId)
-	helper.PanicErr(err)
+	if err != nil {
+		return webmembership.MembershipResponse{}, errors.New("membership data not found")
+	}
 
 	err = membershipService.MembershipRepository.Delete(membershipId)
-	helper.PanicErr(err)
+	if err != nil {
+		return webmembership.MembershipResponse{}, errors.New("membership data not found")
+	}
 
 	membershipResponse := webmembership.MembershipResponse{
 		Id:    membershipData.Id,

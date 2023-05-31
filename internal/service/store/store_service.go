@@ -134,7 +134,7 @@ func (s *storeService) UpdatePayment(newUpdateTransaction *entity.TransactionOrd
 		return nil, errors.New("transaction not found")
 	}
 	newUpdateTransaction.BuyDate = transactionOrderDetail.BuyDate
-	newUpdateTransaction.Status = "on delivery"
+	newUpdateTransaction.Status = "on delivery, transaction completed"
 	newUpdateTransaction.TotalPrice = transactionOrderDetail.TotalPrice
 	newUpdateTransaction.Photo = transactionOrderDetail.Photo
 	newUpdateTransaction.Tax = transactionOrderDetail.Tax

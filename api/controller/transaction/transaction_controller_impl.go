@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,10 +30,28 @@ func NewTransactionController(TransactionService transactionservice.TransactionS
 
 func (TransactionController *TransactionControllerImpl) MakeOrder(context *gin.Context) {
 
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	customerId := claims["id"].(string)
+	// customerName := claims["name"].(string)
+	customerIdInt, _ := strconv.Atoi(customerId)
+	role := claims["role"].(string)
+	if role != "customer" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "user is unauthorized, access for customer only",
+			Data:    "NULL",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
+
 	var Transaction webtransaction.TransactionOrderCreateRequest
 
 	err := context.ShouldBind(&Transaction)
-	// helper.InternalServerError(err, context)
+
+	Transaction.CustomerId = customerIdInt
+
 	if err != nil {
 		result := web.WebResponse{
 			Code:    http.StatusInternalServerError,
@@ -69,6 +88,22 @@ func (TransactionController *TransactionControllerImpl) MakeOrder(context *gin.C
 }
 
 func (TransactionController *TransactionControllerImpl) CustomerPayment(context *gin.Context) {
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	// customerId := claims["id"].(string)
+	// customerName := claims["name"].(string)
+	// customerIdInt, _ := strconv.Atoi(customerId)
+	role := claims["role"].(string)
+	if role != "customer" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "user is unauthorized, access for customer only",
+			Data:    "NULL",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
+
 	// D:\Programming\go\pancakaki\document\uploads\customer_payment
 	var CustomerPayment webtransaction.PaymentCreateRequest
 	paymentId, _ := strconv.Atoi(context.Param("id"))
@@ -118,7 +153,21 @@ func (TransactionController *TransactionControllerImpl) CustomerPayment(context 
 }
 
 func (TransactionController *TransactionControllerImpl) MakeMultipleOrder(context *gin.Context) {
-
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	// customerId := claims["id"].(string)
+	// customerName := claims["name"].(string)
+	// customerIdInt, _ := strconv.Atoi(customerId)
+	role := claims["role"].(string)
+	if role != "customer" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "user is unauthorized, access for customer only",
+			Data:    "NULL",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
 	var Transaction webtransaction.TransactionOrderCreateRequest
 
 	err := context.ShouldBind(&Transaction)

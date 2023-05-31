@@ -15,6 +15,7 @@ type AdminService interface {
 	RegisterBank(req webbank.BankCreateRequest, reqBank webbank.BankAdminCreateRequest) (webbank.BankResponse, error)
 	ViewAllBank() ([]webbank.BankResponse, error)
 	EditBank(req webbank.BankUpdateRequest) (webbank.BankResponse, error)
+	DeleteBank(bankId int) ([]webbank.BankResponse, error)
 
 	// ViewTransactionAllOwner() ([]webadmin.TransactionOwnerResponse, error)
 	// ViewTransactionOwnerByName(ownerName string) (webadmin.TransactionOwnerResponse, error)

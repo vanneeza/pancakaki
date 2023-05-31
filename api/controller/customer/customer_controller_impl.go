@@ -37,7 +37,6 @@ func (customerController *CustomerControllerImpl) Register(context *gin.Context)
 
 	getCustomerByNoHp, err := customerController.customerService.ViewOne(0, "", customer.NoHp)
 	helper.InternalServerError(err, context)
-	// newOwnerId := strconv.Itoa(newOwner.Id)
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["id"] = strconv.Itoa(getCustomerByNoHp.Id)
@@ -63,6 +62,21 @@ func (customerController *CustomerControllerImpl) Register(context *gin.Context)
 }
 
 func (customerController *CustomerControllerImpl) ViewAll(context *gin.Context) {
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	// customerId := claims["id"].(string)
+	// customerIdInt, _ := strconv.Atoi(customerId)
+	role := claims["role"].(string)
+	if role != "customer" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "user is unauthorized, access for customer only",
+			Data:    "NULL",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
+
 	customerResponse, err := customerController.customerService.ViewAll()
 	helper.InternalServerError(err, context)
 
@@ -85,26 +99,36 @@ func (customerController *CustomerControllerImpl) ViewOne(context *gin.Context) 
 		result := web.WebResponse{
 			Code:    http.StatusUnauthorized,
 			Status:  "UNAUTHORIZED",
-			Message: "unauthorized",
-			Data:    "user is unauthorized",
+			Message: "user is unauthorized, access for customer only",
+			Data:    "NULL",
 		}
 		context.JSON(http.StatusUnauthorized, result)
 		return
 	}
 
 	customerResponse, err := customerController.customerService.ViewOne(customerIdInt, "", "")
-	helper.InternalServerError(err, context)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusNotFound,
+			Status:  "STATUS_NOT_FOUND",
+			Message: "the customer data not found",
+			Data:    "NULL",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
 
 	webResponses := web.WebResponse{
 		Code:    http.StatusOK,
 		Status:  "OK",
-		Message: "Customer Profile",
+		Message: "the Customer Profile",
 		Data:    customerResponse,
 	}
 	context.JSON(http.StatusOK, gin.H{"customer/profile": webResponses})
 }
 
 func (customerController *CustomerControllerImpl) Edit(context *gin.Context) {
+
 	claims := context.MustGet("claims").(jwt.MapClaims)
 	customerId := claims["id"].(string)
 	customerIdInt, _ := strconv.Atoi(customerId)
@@ -113,8 +137,8 @@ func (customerController *CustomerControllerImpl) Edit(context *gin.Context) {
 		result := web.WebResponse{
 			Code:    http.StatusUnauthorized,
 			Status:  "UNAUTHORIZED",
-			Message: "unauthorized",
-			Data:    "user is unauthorized",
+			Message: "user is unauthorized, access for customer only",
+			Data:    "NULL",
 		}
 		context.JSON(http.StatusUnauthorized, result)
 		return
@@ -138,6 +162,7 @@ func (customerController *CustomerControllerImpl) Edit(context *gin.Context) {
 }
 
 func (customerController *CustomerControllerImpl) Unreg(context *gin.Context) {
+
 	claims := context.MustGet("claims").(jwt.MapClaims)
 	customerId := claims["id"].(string)
 	customerIdInt, _ := strconv.Atoi(customerId)
@@ -146,8 +171,8 @@ func (customerController *CustomerControllerImpl) Unreg(context *gin.Context) {
 		result := web.WebResponse{
 			Code:    http.StatusUnauthorized,
 			Status:  "UNAUTHORIZED",
-			Message: "unauthorized",
-			Data:    "user is unauthorized",
+			Message: "user is unauthorized, access for customer only",
+			Data:    "NULL",
 		}
 		context.JSON(http.StatusUnauthorized, result)
 		return
@@ -174,8 +199,8 @@ func (customerController *CustomerControllerImpl) Notification(context *gin.Cont
 		result := web.WebResponse{
 			Code:    http.StatusUnauthorized,
 			Status:  "UNAUTHORIZED",
-			Message: "unauthorized",
-			Data:    "user is unauthorized",
+			Message: "user is unauthorized, access for customer only",
+			Data:    "NULL",
 		}
 		context.JSON(http.StatusUnauthorized, result)
 		return

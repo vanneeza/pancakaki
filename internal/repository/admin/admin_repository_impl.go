@@ -42,7 +42,9 @@ func (r *AdminRepositoryImpl) FindAll() ([]entity.Admin, error) {
 	for rows.Next() {
 		var admin entity.Admin
 		err := rows.Scan(&admin.Id, &admin.Username, &admin.Password, &admin.Role)
-		if err != nil {
+		if err == sql.ErrNoRows {
+			return admins, fmt.Errorf("admin data not found")
+		} else if err != nil {
 			return nil, err
 		}
 		admins = append(admins, admin)

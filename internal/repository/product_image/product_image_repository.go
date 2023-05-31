@@ -22,7 +22,7 @@ type productImageRepository struct {
 
 // DeleteProductImage implements ProductImageRepository
 func (repo *productImageRepository) DeleteProductImageByProductId(productId int, tx *sql.Tx) error {
-	stmt, err := repo.db.Prepare("UPDATE tbl_product_image SET is_delete = true WHERE product_id = $1")
+	stmt, err := repo.db.Prepare("UPDATE tbl_product_image SET is_deleted = true WHERE product_id = $1")
 	if err != nil {
 		return fmt.Errorf("failed to delete product image : %w", err)
 	}
@@ -59,7 +59,7 @@ func (repo *productImageRepository) FindAllProductImage() ([]entity.ProductImage
 
 func (repo *productImageRepository) FindAllProductImageByProductId(productId int) ([]entity.ProductImage, error) {
 	var productImages []entity.ProductImage
-	rows, err := repo.db.Query("SELECT id, image_url, product_id FROM tbl_product_image where is_deleted = false and product_id = $1", productId)
+	rows, err := repo.db.Query("SELECT id, image_url, product_id FROM tbl_product_image where is_deletedd = false and product_id = $1", productId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get product image : %w", err)
 	}

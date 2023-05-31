@@ -17,6 +17,10 @@ import (
 
 var jwtKey = "secret_key"
 
+type tokenData struct {
+	Token string `json:"token"`
+}
+
 type LoginController interface {
 	Login(ctx *gin.Context)
 }
@@ -58,11 +62,14 @@ func (h *loginController) Login(ctx *gin.Context) {
 		var jwtKeyByte = []byte(jwtKey)
 		tokenString, err := token.SignedString(jwtKeyByte)
 		helper.InternalServerError(err, ctx)
+
 		result := web.WebResponse{
 			Code:    http.StatusOK,
 			Status:  "OK",
-			Message: "The admin has successfully logged in.",
-			Data:    tokenString,
+			Message: "The admin has successfully logged in. Hello " + getAdminByUsername.Username,
+			Data: tokenData{
+				Token: tokenString,
+			},
 		}
 		ctx.JSON(http.StatusOK, result)
 		return
@@ -94,8 +101,8 @@ func (h *loginController) Login(ctx *gin.Context) {
 			result := web.WebResponse{
 				Code:    http.StatusBadRequest,
 				Status:  "BAD_REQUEST",
-				Message: "bad request",
-				Data:    "wrong password",
+				Message: "wrong password",
+				Data:    "NULL",
 			}
 			ctx.JSON(http.StatusBadRequest, result)
 			return
@@ -116,8 +123,10 @@ func (h *loginController) Login(ctx *gin.Context) {
 		result := web.WebResponse{
 			Code:    http.StatusOK,
 			Status:  "OK",
-			Message: "the owner has successfully logged in. Hello " + getOwnerByNoHp.Name,
-			Data:    tokenString,
+			Message: "the owner has successfully logged in, hello " + getOwnerByNoHp.Name,
+			Data: tokenData{
+				Token: tokenString,
+			},
 		}
 		ctx.JSON(http.StatusOK, result)
 
@@ -128,8 +137,8 @@ func (h *loginController) Login(ctx *gin.Context) {
 			result := web.WebResponse{
 				Code:    http.StatusBadRequest,
 				Status:  "BAD_REQUEST",
-				Message: "bad request",
-				Data:    "wrong password",
+				Message: "wrong password",
+				Data:    "NULL",
 			}
 			ctx.JSON(http.StatusBadRequest, result)
 			return
@@ -151,8 +160,10 @@ func (h *loginController) Login(ctx *gin.Context) {
 		result := web.WebResponse{
 			Code:    http.StatusOK,
 			Status:  "OK",
-			Message: "The customer has successfully logged in.",
-			Data:    tokenString,
+			Message: "The customer has successfully logged in, hello " + getCustomerByNoHp.Name,
+			Data: tokenData{
+				Token: tokenString,
+			},
 		}
 		ctx.JSON(http.StatusOK, result)
 	}

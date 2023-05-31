@@ -67,6 +67,28 @@ func (r *BankRepositoryImpl) FindAll() ([]entity.Bank, error) {
 	return tbl_bank, nil
 }
 
+func (r *BankRepositoryImpl) FindById(bankId int) ([]entity.Bank, error) {
+
+	var tbl_bank []entity.Bank
+	rows, err := r.Db.Query(`SELECT tbl_bank.id, tbl_bank.name, tbl_bank.bank_account, tbl_bank.account_name
+	FROM tbl_bank INNER JOIN tbl_bank_admin ON tbl_bank.id = tbl_bank_admin.bank_id where tbl_bank.is_deleted = false AND tbl_bank.id = $1`, bankId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var bank entity.Bank
+		err := rows.Scan(&bank.Id, &bank.Name, &bank.BankAccount, &bank.AccountName)
+		if err != nil {
+			return nil, err
+		}
+		tbl_bank = append(tbl_bank, bank)
+	}
+
+	return tbl_bank, nil
+}
+
 func (r *BankRepositoryImpl) Update(bank *entity.Bank) (*entity.Bank, error) {
 	stmt, err := r.Db.Prepare(`UPDATE tbl_bank SET name = $1, bank_account = $2, account_name = $3	WHERE id = $4`)
 

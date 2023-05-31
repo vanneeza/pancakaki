@@ -32,8 +32,8 @@ func (chartController *ChartControllerImpl) Register(context *gin.Context) {
 		result := web.WebResponse{
 			Code:    http.StatusUnauthorized,
 			Status:  "UNAUTHORIZED",
-			Message: "user is unauthorized",
-			Data:    "",
+			Message: "user is unauthorized, access for customer only",
+			Data:    "NULL",
 		}
 		context.JSON(http.StatusUnauthorized, result)
 		return
@@ -43,7 +43,16 @@ func (chartController *ChartControllerImpl) Register(context *gin.Context) {
 
 	chart.CustomerId = idCustomer
 	err := context.ShouldBind(&chart)
-	helper.InternalServerError(err, context)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "the chart data is not found",
+			Data:    "NULL",
+		}
+		context.JSON(http.StatusInternalServerError, result)
+		return
+	}
 	chartResponse, err := chartController.chartService.Register(chart)
 	helper.InternalServerError(err, context)
 
@@ -68,15 +77,24 @@ func (chartController *ChartControllerImpl) ViewAll(context *gin.Context) {
 		result := web.WebResponse{
 			Code:    http.StatusUnauthorized,
 			Status:  "UNAUTHORIZED",
-			Message: "user is unauthorized",
-			Data:    "",
+			Message: "user is unauthorized, access for customer only",
+			Data:    "NULL",
 		}
 		context.JSON(http.StatusUnauthorized, result)
 		return
 	}
 
 	chartResponse, err := chartController.chartService.ViewAll(idCustomer)
-	helper.InternalServerError(err, context)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusNotFound,
+			Status:  "STATUS_NOT_FOUND",
+			Message: "the chart data is not found",
+			Data:    "NULL",
+		}
+		context.JSON(http.StatusNotFound, result)
+		return
+	}
 
 	web_response := web.WebResponse{
 		Code:    http.StatusOK,
@@ -88,9 +106,34 @@ func (chartController *ChartControllerImpl) ViewAll(context *gin.Context) {
 }
 
 func (chartController *ChartControllerImpl) ViewOne(context *gin.Context) {
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	// idClaim, _ := claims["id"].(string)
+	role := claims["role"]
+	// idCustomer, _ := strconv.Atoi(idClaim)
+
+	if role != "customer" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "user is unauthorized, access for customer only",
+			Data:    "NULL",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
+
 	chartId, _ := strconv.Atoi(context.Param("id"))
 	chartResponse, err := chartController.chartService.ViewOne(chartId)
-	helper.InternalServerError(err, context)
+	if err != nil {
+		result := web.WebResponse{
+			Code:    http.StatusNotFound,
+			Status:  "STATUS_NOT_FOUND",
+			Message: err.Error(),
+			Data:    "NULL",
+		}
+		context.JSON(http.StatusNotFound, result)
+		return
+	}
 
 	webResponses := web.WebResponse{
 		Code:    http.StatusOK,
@@ -105,13 +148,14 @@ func (chartController *ChartControllerImpl) Edit(context *gin.Context) {
 	claims := context.MustGet("claims").(jwt.MapClaims)
 	// idClaim, _ := claims["id"].(string)
 	role := claims["role"]
+	// idCustomer, _ := strconv.Atoi(idClaim)
 
 	if role != "customer" {
 		result := web.WebResponse{
 			Code:    http.StatusUnauthorized,
 			Status:  "UNAUTHORIZED",
-			Message: "user is unauthorized",
-			Data:    "",
+			Message: "user is unauthorized, access for customer only",
+			Data:    "NULL",
 		}
 		context.JSON(http.StatusUnauthorized, result)
 		return
@@ -137,6 +181,22 @@ func (chartController *ChartControllerImpl) Edit(context *gin.Context) {
 }
 
 func (chartController *ChartControllerImpl) Unreg(context *gin.Context) {
+	claims := context.MustGet("claims").(jwt.MapClaims)
+	// idClaim, _ := claims["id"].(string)
+	role := claims["role"]
+	// idCustomer, _ := strconv.Atoi(idClaim)
+
+	if role != "customer" {
+		result := web.WebResponse{
+			Code:    http.StatusUnauthorized,
+			Status:  "UNAUTHORIZED",
+			Message: "user is unauthorized, access for customer only",
+			Data:    "NULL",
+		}
+		context.JSON(http.StatusUnauthorized, result)
+		return
+	}
+
 	chartId, _ := strconv.Atoi(context.Param("id"))
 	chartResponse, err := chartController.chartService.Unreg(chartId)
 	helper.InternalServerError(err, context)

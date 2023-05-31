@@ -7,6 +7,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Auth struct {
+	Code    int
+	Status  string
+	Message string
+}
+
 func AuthMiddleware(jwtKey string) gin.HandlerFunc {
 	var jwtKeyByte = []byte(jwtKey)
 
@@ -14,8 +20,12 @@ func AuthMiddleware(jwtKey string) gin.HandlerFunc {
 		tokenString := ctx.GetHeader("Authorization")
 
 		if tokenString == "" {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-			ctx.Abort()
+			result := Auth{
+				Code:    http.StatusUnauthorized,
+				Status:  "Unauthorized",
+				Message: "You are not logged in. Please log in or register first",
+			}
+			ctx.JSON(http.StatusUnauthorized, result)
 			return
 		}
 
@@ -24,8 +34,12 @@ func AuthMiddleware(jwtKey string) gin.HandlerFunc {
 		})
 
 		if !token.Valid || err != nil {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-			ctx.Abort()
+			result := Auth{
+				Code:    http.StatusUnauthorized,
+				Status:  "Unauthorized",
+				Message: "you are not logged in, please log in or register first",
+			}
+			ctx.JSON(http.StatusUnauthorized, result)
 			return
 		}
 

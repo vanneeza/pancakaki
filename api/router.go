@@ -116,6 +116,7 @@ func Run(db *sql.DB) *gin.Engine {
 
 		admin.POST("/bank/", adminController.RegisterBank)
 		admin.PUT("/bank/:id", adminController.EditBank)
+		admin.DELETE("/bank/:id", adminController.DeleteBank)
 		admin.GET("/banks/", adminController.ViewAllBank)
 
 		admin.POST("/membership/", membershipController.Register)

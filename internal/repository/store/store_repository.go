@@ -117,7 +117,7 @@ func (repo *storeRepository) CreateStore(newStore *entity.Store, tx *sql.Tx) (*e
 
 func (repo *storeRepository) GetStoreByOwnerId(id int) ([]entity.Store, error) {
 	var stores []entity.Store
-	rows, err := repo.db.Query("SELECT id, name,no_hp,email,address,owner_id FROM tbl_store WHERE owner_id = $1", id)
+	rows, err := repo.db.Query("SELECT id, name,no_hp,email,address,owner_id FROM tbl_store WHERE owner_id = $1 AND is_deleted = false", id)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("store with owner_id %d not found", id)
 	} else if err != nil {

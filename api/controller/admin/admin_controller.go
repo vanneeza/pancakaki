@@ -12,4 +12,5 @@ type AdminController interface {
 	RegisterBank(context *gin.Context)
 	EditBank(context *gin.Context)
 	ViewAllBank(context *gin.Context)
+	DeleteBank(context *gin.Context)
 }

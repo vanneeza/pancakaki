@@ -1,6 +1,7 @@
 package chartservice
 
 import (
+	"errors"
 	"pancakaki/internal/domain/entity"
 	webchart "pancakaki/internal/domain/web/chart"
 	"pancakaki/utils/helper"
@@ -64,7 +65,9 @@ func (chartService *ChartServiceImpl) ViewAll(customerId int) ([]webchart.ChartR
 
 func (chartService *ChartServiceImpl) ViewOne(chartId int) (webchart.ChartResponse, error) {
 	chart, err := chartService.ChartRepository.FindById(chartId)
-	helper.PanicErr(err)
+	if err != nil {
+		return webchart.ChartResponse{}, errors.New("the chart data is not found")
+	}
 
 	chartResponse := webchart.ChartResponse{
 		Id:         chart.Id,

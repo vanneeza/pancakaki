@@ -2,6 +2,7 @@ package chartrepository
 
 import (
 	"database/sql"
+	"fmt"
 	"pancakaki/internal/domain/entity"
 )
 
@@ -60,7 +61,9 @@ func (r *ChartRepositoryImpl) FindById(id int) (*entity.Chart, error) {
 
 	row := stmt.QueryRow(id)
 	err = row.Scan(&chart.Id, &chart.Qty, &chart.Total, &chart.CustomerId, &chart.ProductId)
-	if err != nil {
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("the chart data with id %d is not found ", id)
+	} else if err != nil {
 		return nil, err
 	}
 

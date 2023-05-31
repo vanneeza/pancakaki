@@ -56,7 +56,7 @@ func (repo *ownerRepository) GetOwnerByNoHp(noHp string) (*entity.Owner, error) 
 
 func (repo *ownerRepository) GetOwnerById(id int) (*entity.Owner, error) {
 	var owner entity.Owner
-	stmt, err := repo.db.Prepare("SELECT id,name,no_hp,email,password,membership_id,role FROM tbl_owner WHERE id = $1")
+	stmt, err := repo.db.Prepare("SELECT id,name,no_hp,email,password,membership_id,role FROM tbl_owner WHERE id = $1 AND is_deleted = false")
 	if err != nil {
 		return nil, err
 	}

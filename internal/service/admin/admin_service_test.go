@@ -111,6 +111,14 @@ func (u *BankRepositoryMock) FindAll() ([]entity.Bank, error) {
 	return args.Get(0).([]entity.Bank), nil
 }
 
+func (u *BankRepositoryMock) FindById(bankId int) ([]entity.Bank, error) {
+	args := u.Called()
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]entity.Bank), nil
+}
+
 func (u *BankRepositoryMock) Update(bank *entity.Bank) (*entity.Bank, error) {
 	panic("implement me")
 }

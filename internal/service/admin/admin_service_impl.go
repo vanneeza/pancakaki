@@ -34,8 +34,19 @@ func NewAdminService(adminRepository adminrepository.AdminRepository,
 }
 
 func (adminService *AdminServiceImpl) Register(req webadmin.AdminCreateRequest) (webadmin.AdminResponse, error) {
+	if req.Username == "" {
+		return webadmin.AdminResponse{}, errors.New("username required")
+	}
 
-	encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if req.Password == "" {
+		return webadmin.AdminResponse{}, errors.New("password required")
+	}
+
+	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return webadmin.AdminResponse{}, errors.New("failed to generete password")
+	}
+
 	admin := entity.Admin{
 		Username: req.Username,
 		Password: string(encryptedPassword),
@@ -87,7 +98,19 @@ func (adminService *AdminServiceImpl) ViewOne(adminId int, username string) (web
 }
 
 func (adminService *AdminServiceImpl) Edit(req webadmin.AdminUpdateRequest) (webadmin.AdminResponse, error) {
-	encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if req.Username == "" {
+		return webadmin.AdminResponse{}, errors.New("username required")
+	}
+
+	if req.Password == "" {
+		return webadmin.AdminResponse{}, errors.New("password required")
+	}
+
+	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return webadmin.AdminResponse{}, errors.New("failed to generete password")
+	}
+
 	admin := entity.Admin{
 		Id:       req.Id,
 		Username: req.Username,
@@ -95,7 +118,9 @@ func (adminService *AdminServiceImpl) Edit(req webadmin.AdminUpdateRequest) (web
 	}
 
 	adminData, err := adminService.AdminRepository.Update(&admin)
-	helper.PanicErr(err)
+	if err != nil {
+		return webadmin.AdminResponse{}, errors.New("failed to update data")
+	}
 
 	adminResponse := webadmin.AdminResponse{
 		Id:       adminData.Id,
@@ -109,7 +134,9 @@ func (adminService *AdminServiceImpl) Edit(req webadmin.AdminUpdateRequest) (web
 }
 
 func (adminService *AdminServiceImpl) Unreg(adminId int, username string) (webadmin.AdminResponse, error) {
-
+	if adminId == 0 && username == "" {
+		return webadmin.AdminResponse{}, errors.New("admin id and username required")
+	}
 	adminData, err := adminService.AdminRepository.FindById(adminId, username)
 	if err != nil {
 		return webadmin.AdminResponse{}, errors.New("NULL")
@@ -132,6 +159,13 @@ func (adminService *AdminServiceImpl) Unreg(adminId int, username string) (webad
 }
 
 func (adminService *AdminServiceImpl) RegisterBank(req webbank.BankCreateRequest, reqBank webbank.BankAdminCreateRequest) (webbank.BankResponse, error) {
+	if req.AccountName == "" {
+		return webbank.BankResponse{}, errors.New("account name is required")
+	}
+
+	if req.BankAccount == 0 {
+		return webbank.BankResponse{}, errors.New("bank account is required")
+	}
 
 	bank := entity.Bank{
 		Name:        req.Name,
@@ -139,14 +173,20 @@ func (adminService *AdminServiceImpl) RegisterBank(req webbank.BankCreateRequest
 		AccountName: req.AccountName,
 	}
 
-	bankData, _ := adminService.BankRepository.Create(&bank)
+	bankData, err := adminService.BankRepository.Create(&bank)
 
+	if err != nil {
+		return webbank.BankResponse{}, errors.New("failed to create bank")
+	}
 	bankAdmin := entity.BankAdmin{
 		AdminId: reqBank.AdminId,
 		BankId:  bankData.Id,
 	}
 
-	adminService.BankRepository.CreateBankAdmin(&bankAdmin)
+	_, err2 := adminService.BankRepository.CreateBankAdmin(&bankAdmin)
+	if err2 != nil {
+		return webbank.BankResponse{}, errors.New("failed to create bank")
+	}
 	bankResponse := webbank.BankResponse{
 		Id:          bankData.Id,
 		Name:        bankData.Name,
@@ -190,4 +230,33 @@ func (adminService *AdminServiceImpl) ViewAllBank() ([]webbank.BankResponse, err
 		}
 	}
 	return bankResponse, nil
+}
+
+func (adminService *AdminServiceImpl) DeleteBank(bankId int) ([]webbank.BankResponse, error) {
+	if bankId == 0 {
+		return []webbank.BankResponse{}, errors.New("NULL")
+	}
+
+	bankResponse, err := adminService.BankRepository.FindById(bankId)
+	if err != nil {
+		return []webbank.BankResponse{}, errors.New("NULL")
+	}
+
+	err = adminService.BankRepository.Delete(bankId)
+
+	if err != nil {
+		return []webbank.BankResponse{}, errors.New("NULL")
+	}
+
+	bankResponses := make([]webbank.BankResponse, len(bankResponse))
+	for i, bank := range bankResponse {
+		bankResponses[i] = webbank.BankResponse{
+			Id:          bank.Id,
+			Name:        bank.Name,
+			AccountName: bank.AccountName,
+			BankAccount: bank.BankAccount,
+		}
+
+	}
+	return bankResponses, nil
 }

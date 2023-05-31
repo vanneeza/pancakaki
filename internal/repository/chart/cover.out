@@ -15,7 +15,7 @@ pancakaki/internal/repository/chart/chart_repository_impl.go:50.2,50.23 1 1
 pancakaki/internal/repository/chart/chart_repository_impl.go:53.71,56.16 3 1
 pancakaki/internal/repository/chart/chart_repository_impl.go:56.16,58.3 1 0
 pancakaki/internal/repository/chart/chart_repository_impl.go:59.2,63.16 4 1
-pancakaki/internal/repository/chart/chart_repository_impl.go:63.16,65.3 1 1
+pancakaki/internal/repository/chart/chart_repository_impl.go:63.16,65.3 1 0
 pancakaki/internal/repository/chart/chart_repository_impl.go:67.2,67.20 1 1
 pancakaki/internal/repository/chart/chart_repository_impl.go:70.82,72.16 2 1
 pancakaki/internal/repository/chart/chart_repository_impl.go:72.16,74.3 1 0

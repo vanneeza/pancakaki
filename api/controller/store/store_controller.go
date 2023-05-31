@@ -273,17 +273,17 @@ func (h *storeController) GetStoreByOwnerId(ctx *gin.Context) {
 	}
 
 	getStoreByOwnerId, err := h.storeService.GetStoreByOwnerId(ownerIdInt)
-	// helper.InternalServerError(err, ctx)
 	if err != nil {
 		result := web.WebResponse{
-			Code:    http.StatusInternalServerError,
-			Status:  "INTERNAL_SERVER_ERROR",
-			Message: "status internal server error",
-			Data:    err.Error(),
+			Code:    http.StatusNotFound,
+			Status:  "STATUS_NOT_FOUND",
+			Message: err.Error(),
+			Data:    "NULL",
 		}
-		ctx.JSON(http.StatusInternalServerError, result) //buat ngirim respon
+		ctx.JSON(http.StatusNotFound, result)
 		return
 	}
+
 	result := web.WebResponse{
 		Code:    http.StatusOK,
 		Status:  "OK",
