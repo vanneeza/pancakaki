@@ -159,6 +159,8 @@ func Run(db *sql.DB) *gin.Engine {
 		//payment
 		owner.POST("/payment", ownerController.PaymentOwner)
 		owner.PUT("/store/:storeid/payment/:transactionid", storeController.UpdatePayment)
+		//report
+		owner.GET("/store/:storeid/report", storeController.DownloadLicense)
 	}
 
 	product := pancakaki.Group("/products")
